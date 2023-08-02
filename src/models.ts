@@ -11,10 +11,11 @@ export type User = {
     fullName: string,
     address: string,
     meterNumber: number,
-    sactionLoad: number,
+    sanctionedLoad: number,
     consumerType: ConsumerType,
     subsidyRate: number,
     phase: 1 | 3,
+    approved: boolean,
     supportingDocs: Array<string>
 }
 

@@ -39,7 +39,7 @@ app.use(
 
 server.listen(port, async () => {
     app.use("/api/admin", verifyAdmin, adminRouter);
-    app.use("/api/user", consumerRouter);
+    app.use("/api/consumer", consumerRouter);
     app.use("/api/auth", auth, authRouter);
 
     app.get("/", (_req: Request, res: Response) => {
