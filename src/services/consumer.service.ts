@@ -8,9 +8,10 @@ export async function getCurrentUserCount(){
 
     return userCount;
 }
-export async function createConsumer(user: User) {
+export async function createConsumer(user: User): Promise<string> {
 
     const addedConsumer = await consumerCollection.add(user);
+    console.log(`ConsumerId: ${addedConsumer.id}`)
     if (addedConsumer) {
         return addedConsumer.id;
     } else {
