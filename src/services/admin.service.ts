@@ -6,7 +6,8 @@ export type ConsumerFetchDetails= {
     phoneNumber: Number,
     fullName: string,
     consumerType: string,
-    consumerId: string
+    consumerId: string,
+    approved: boolean
 }
 
 export async function fetchConsumer(): Promise<
@@ -23,7 +24,8 @@ export async function fetchConsumer(): Promise<
             phoneNumber: userData.phoneNumber,
             fullName: userData.fullName,
             consumerType: userData.consumerType,
-            consumerId: userDoc.id
+            consumerId: userDoc.id,
+            approved: userData.approved
         });
     });
     return users;
