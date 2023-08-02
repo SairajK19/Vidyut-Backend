@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { AdminCollectionName, BillingCollectionName, CommercialRateCollectionName, ComplaintCollectionName, DomesticRateCollectionName, IndustrialRateCollectionName, ConsumerCollectionName } from "../lib/commons";
+import { User } from "../models";
 const credentials = require("../../credentials.json");
 
 admin.initializeApp({
