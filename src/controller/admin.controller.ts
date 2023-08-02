@@ -18,10 +18,6 @@ adminRouter.get("/fetchConsumers", async (req, res) => {
 
 })
 
-
-
-
-
 adminRouter.get("/consumerApplicationDetails/:consumerId", async (req, res) => {
     try {
         const consumerId: string = req.params.consumerId;

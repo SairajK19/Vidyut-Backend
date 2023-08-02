@@ -6,6 +6,8 @@ export type Admin = {
     password: string
 }
 
+export type UserApplicationStatus = "Approved" | "Pending" | "Rejected"
+
 export type User = {
     phoneNumber: number,
     fullName: string,
@@ -17,8 +19,8 @@ export type User = {
     subsidyRate: number,
     phase: 1 | 3,
     approved: boolean,
-    supportingDocs: Array<string>
-    status: "Approved" | "Pending" | "Rejected"
+    supportingDocs: Array<string>,
+    status: UserApplicationStatus 
 }
 
 export type Billing = {
@@ -54,5 +56,5 @@ export type CommercialRate = {
 export type Complaint = {
     description: string,
     status: string,
-    billDocId: string 
+    billDocId: string
 }

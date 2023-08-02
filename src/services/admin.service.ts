@@ -1,5 +1,5 @@
 import { consumerCollection } from "./initDb";
-import { User } from "../models";
+import { User, UserApplicationStatus } from "../models";
 
 export type ConsumerFetchDetails= {
     meterNumber: Number,
@@ -8,6 +8,7 @@ export type ConsumerFetchDetails= {
     consumerType: string,
     consumerId: string,
     approved: boolean
+    status: UserApplicationStatus
 }
 
 export async function fetchConsumer(): Promise<
@@ -25,7 +26,8 @@ export async function fetchConsumer(): Promise<
             fullName: userData.fullName,
             consumerType: userData.consumerType,
             consumerId: userDoc.id,
-            approved: userData.approved
+            approved: userData.approved,
+            status: userData.status
         });
     });
     return users;
