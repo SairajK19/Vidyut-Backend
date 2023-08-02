@@ -14,3 +14,5 @@ export const domesticRateCollection = db.collection(DomesticRateCollectionName);
 export const industrialRateCollection = db.collection(IndustrialRateCollectionName);
 export const commercialCollection = db.collection(CommercialRateCollectionName);
 export const complaintCollection = db.collection(ComplaintCollectionName);
+
+export { admin };

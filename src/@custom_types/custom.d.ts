@@ -1,3 +1,4 @@
+import "express-session";
 export type ConsumerType = "domestic" | "commercial" | "industrial"
 
 export type Breakage = {
@@ -20,4 +21,15 @@ export type IndustrialSlab = {
 export type IndustrialFCSlab = {
     range: "0-20" | "20-90",
     pricePerUnit: number
+}
+
+type UserSession = {
+  userDocId: string | null;
+  loggedIn: boolean;
+};
+
+declare module "express-session" {
+  interface SessionData {
+    userData: UserSession;
+  }
 }
