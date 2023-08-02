@@ -10,6 +10,7 @@ export type User = {
     phoneNumber: number,
     fullName: string,
     address: string,
+    email: string,
     meterNumber: number,
     sanctionedLoad: number,
     consumerType: ConsumerType,
@@ -17,6 +18,7 @@ export type User = {
     phase: 1 | 3,
     approved: boolean,
     supportingDocs: Array<string>
+    status: "Approved" | "Pending" | "Rejected"
 }
 
 export type Billing = {

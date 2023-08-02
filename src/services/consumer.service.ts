@@ -9,12 +9,18 @@ export async function getCurrentUserCount() {
     return userCount;
 }
 
-export async function userAlreadyExist(fullName:string,phoneNumber:Number) {
-    const user = (await consumerCollection.where("fullName","==",fullName).where("phoneNumber","==",phoneNumber).get()).docs[0].data()
-    if (user){
-        return true;
-    }else{
-        return false;
+export async function userAlreadyExist(email: string, phoneNumber: Number) {
+    try {
+        const user = (await consumerCollection.where("email", "==", email).where("phoneNumber", "==", phoneNumber).get()).docs
+
+        if (user.length > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    } catch (err) {
+        console.log(err);
+        throw new Error(err.message)
     }
 }
 export async function createConsumer(user: User): Promise<string> {
