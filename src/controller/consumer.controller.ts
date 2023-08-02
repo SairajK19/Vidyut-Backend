@@ -1,14 +1,15 @@
 import { Router, response } from "express";
 import { User } from "../models";
-import { createConsumer, getCurrentUserCount } from "../services/consumer.service";
+import { createConsumer, getCurrentUserCount, userAlreadyExist } from "../services/consumer.service";
 import { log } from "firebase-functions/logger";
 
 export const consumerRouter = Router();
 
 consumerRouter.post("/createConsumer", async(req, res) => {
     try {
-        // Todo: If consumer already exist
-        
+        if (userAlreadyExist(req.body.fullName,Number(req.body.phoneNumber))){
+            return res.status(403).json({success:false,message:"user already exists"});
+        }
         const user: User = {
             fullName: req.body.fullName,
             phoneNumber: Number(req.body.phoneNumber),
