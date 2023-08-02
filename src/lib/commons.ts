@@ -1,5 +1,5 @@
 export const AdminCollectionName = "Admin";
-export const UserCollectionName = "Users";
+export const ConsumerCollectionName = "Consumer";
 export const BillingCollectionName = "Billings"
 export const DomesticRateCollectionName = "DomesticRates";
 export const IndustrialRateCollectionName = "IndustrialRates";
