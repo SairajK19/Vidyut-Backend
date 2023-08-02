@@ -4,7 +4,9 @@ import { consumerCollection } from "./initDb";
 
 export async function getCurrentUserCount(){
     const userCount= (await consumerCollection.get()).docs.length;
-    return Number(userCount.toString().padEnd(5,'0'))
+    // return Number(userCount.toString().padEnd(5,'0'))
+
+    return userCount;
 }
 export async function createConsumer(user: User) {
 
