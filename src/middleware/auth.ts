@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { admin, adminCollection } from "../services/initDb";
+import { adminCollection } from "../services/initDb";
 import { AdminCollectionName } from "../lib/commons";
 import { Admin } from "../models";
 
