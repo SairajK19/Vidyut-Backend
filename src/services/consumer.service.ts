@@ -24,7 +24,6 @@ export async function userAlreadyExist(email: string, phoneNumber: Number) {
     }
 }
 export async function createConsumer(user: User): Promise<string> {
-
     const addedConsumer = await consumerCollection.add(user);
     console.log(`ConsumerId: ${addedConsumer.id}`)
     if (addedConsumer) {
@@ -32,7 +31,4 @@ export async function createConsumer(user: User): Promise<string> {
     } else {
         return null;
     }
-
-
-
 }
