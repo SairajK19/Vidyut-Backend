@@ -35,8 +35,9 @@ export type User = {
 export type Billing = {
   consumerDocId: string;
   meterNumber: number;
-  currentDate: Timestamp;
-  paymentDate: Timestamp;
+  currentDate: Date;
+  currentReading: number;
+  paymentDate: Date;
   previousReading: number;
   consumption: number;
   breakage: Array<Breakage>;
@@ -45,24 +46,31 @@ export type Billing = {
   totalCharge: number;
   paid: boolean;
   rateDocId: string;
+  latest: boolean;
 };
 
 export type DomesticRate = {
   slabs: Array<ECSlab>;
   fixedChargeRate: number;
   latest: boolean;
+  validFrom: Date;
+  validTill: Date;
 };
 
 export type IndustrialRate = {
   slabs: Array<IndustrialSlab>;
   fixedChargeRate: number;
   latest: boolean;
+  validFrom: Date;
+  validTill: Date;
 };
 
 export type CommercialRate = {
   slabs: Array<ECSlab>;
   fixedChargeRate: Array<CommercialFCSlab>;
   latest: boolean;
+  validFrom: Date;
+  validTill: Date;
 };
 
 export type Complaint = {

@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { ConsumerFetchDetails, fetchConsumer } from "../services/admin.service";
-import { User } from "../models";
-import { consumerCollection } from "../services/initDb";
-import { ConsumerCollectionName } from "../lib/commons";
-import { ConsumerType } from "custom";
+import { Billing, DomesticRate, User } from "../models";
+import { billingCollection, consumerCollection } from "../services/initDb";
+import { Breakage, ConsumerType } from "custom";
 import {
   addCommercialRate,
   addDomesticRate,
   addIndustrialRate,
+  calculateDomesticTotalCharge,
+  getRateDoc,
 } from "../services/billing.service";
 
 export const adminRouter = Router();
@@ -134,13 +135,13 @@ adminRouter.post("/createRate", async (req, res) => {
     var addedRate = null;
     switch (req.body.rateType as ConsumerType) {
       case "Domestic":
-        addedRate = addDomesticRate(req.body);
+        addedRate = await addDomesticRate(req.body);
         break;
       case "Commercial":
-        addedRate = addCommercialRate(req.body);
+        addedRate = await addCommercialRate(req.body);
         break;
       case "Industrial":
-        addedRate = addIndustrialRate(req.body);
+        addedRate = await addIndustrialRate(req.body);
         break;
       default:
         return res.status(401).json({
@@ -168,9 +169,92 @@ adminRouter.post("/createRate", async (req, res) => {
   }
 });
 
+/**
+ * This route will be used to create a bill
+ *
+ * The request object should contain following properties
+ * {
+ *  billReadings: Array<{
+ *      consumerId: string,
+ *      meterNumber: number,
+ *      currentReading: number,
+ *      dateOfReading: Date
+ *  }>
+ * }
+ */
 adminRouter.post("/createBill", async (req, res) => {
   try {
-    res.send("TODO: Create Bills");
+    if (req.body.billReadings.length < 1) {
+      return res.status(400).json({});
+    }
+
+    await Promise.all(
+      req.body.billReadings.map(
+        async (reading: {
+          consumerId: string;
+          meterNumber: number;
+          currentReading: number;
+          dateOfReading: string;
+        }) => {
+          const consumer = (
+            await consumerCollection.doc(reading.consumerId).get()
+          ).data() as User;
+
+          if (!consumer) {
+            throw new Error("Invalid consumer Id, consumer not found!");
+          }
+
+          const previousBillDoc = (
+            await billingCollection
+              .where("consumerId", "==", reading.consumerId)
+              .where("latest", "==", true)
+              .get()
+          ).docs[0];
+
+          const previousBill = previousBillDoc
+            ? (previousBillDoc.data() as Billing)
+            : null;
+          const rateDoc = await getRateDoc(consumer.consumerType);
+
+          if (previousBill) {
+            await billingCollection
+              .doc(previousBillDoc.id)
+              .update({ latest: false });
+          }
+
+          const calculatedTotalCharge: {
+            totalCharge: number;
+            breakage: Array<Breakage>;
+          } = await calculateDomesticTotalCharge(
+            reading.currentReading -
+              (previousBill ? previousBill.currentReading : 0),
+            rateDoc.data() as DomesticRate,
+            consumer
+          );
+
+          const bill: Billing = {
+            paid: false,
+            latest: true,
+            consumerDocId: reading.consumerId,
+            consumption:
+              reading.currentReading -
+              (previousBill ? previousBill.currentReading : 0),
+            currentDate: new Date(reading.dateOfReading),
+            currentReading: reading.currentReading,
+            meterNumber: consumer.meterNumber,
+            paymentDate: null,
+            rateDocId: rateDoc.id,
+            fixedCharge: rateDoc.data().fixedChargeRate,
+            meterRent: consumer.phase == 1 ? 15 : 25,
+            previousReading: previousBill ? previousBill.currentReading : 0,
+            totalCharge: calculatedTotalCharge.totalCharge,
+            breakage: calculatedTotalCharge.breakage,
+          };
+
+          console.log(bill);
+        }
+      )
+    );
   } catch (err) {
     console.log(err);
     return res.status(500).json({
