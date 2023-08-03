@@ -1,6 +1,7 @@
 import { ConsumerType } from "custom";
 import { User } from "../models";
-import { consumerCollection } from "./initDb";
+import { Complaint } from "../models";
+import { complaintCollection, consumerCollection } from "./initDb";
 
 export async function getCurrentUserCount() {
     const userCount = (await consumerCollection.get()).docs.length;
@@ -32,7 +33,16 @@ export async function createConsumer(user: User): Promise<string> {
     } else {
         return null;
     }
+}
 
+export async function createComplaint(user: Complaint): Promise<string> {
 
+    const createdComplaint = await complaintCollection.add(user);
+    // console.log(`consumerdocId: ${createdComplaint.id}`)
+    if (createdComplaint) {
+        return createdComplaint.id;
+    } else {
+        return null;
+    }
 
 }

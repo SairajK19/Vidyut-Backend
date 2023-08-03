@@ -55,6 +55,7 @@ export type CommercialRate = {
 
 export type Complaint = {
     description: string,
-    status: string,
-    billDocId: string
+    status: "Resolved"|"Rejected"|"Pending",
+    billDocId: string,
+    consumerDocId:string
 }

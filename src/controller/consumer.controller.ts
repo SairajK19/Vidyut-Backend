@@ -1,7 +1,9 @@
 import { Router, response } from "express";
 import { User } from "../models";
-import { createConsumer, getCurrentUserCount, userAlreadyExist } from "../services/consumer.service";
+import { Complaint } from "../models";
+import { createComplaint, createConsumer, getCurrentUserCount, userAlreadyExist } from "../services/consumer.service";
 import { log } from "firebase-functions/logger";
+import { consumerCollection } from "../services/initDb";
 
 export const consumerRouter = Router();
 
@@ -34,5 +36,32 @@ consumerRouter.post("/createConsumer", async (req, res) => {
         console.log(err)
         res.status(500).json({ success: false, message: "internal server error" })
     }
+
+})
+
+    consumerRouter.post("/createComplaint", async (req, res) => {
+        try {
+            if ((await consumerCollection.doc(req.body.consumerDocId).get()).data() == null) {
+                return res.status(403).json({ success: false, message: "comsumer doesnt exists" });
+            }
+    
+            const complaint: Complaint = {
+
+                description: req.body.description,
+                status: "Pending",
+                billDocId: req.body.billDocId,
+                consumerDocId:req.body.consumerDocId
+                
+            };
+
+            const createdComplaint: string = await createComplaint(complaint)
+            createdComplaint ? res.status(200).json({ success: true, message: "created complaint successfully" })
+                : res.status(500).json({ success: false, message: "consumer complaint creation  failed" })
+    
+        } catch (err) {
+            console.log(err)
+            res.status(500).json({ success: false, message: "internal server error" })
+        }
+    
 
 })
