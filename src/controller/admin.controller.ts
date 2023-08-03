@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { ConsumerFetchDetails, fetchConsumer } from "../services/admin.service";
 import { User } from "../models";
-import { consumerCollection } from "../services/initDb";
+import { Complaint } from "../models";
+import { complaintCollection, consumerCollection } from "../services/initDb";
 import { ConsumerCollectionName } from "../lib/commons";
 import { ConsumerType } from "custom";
 import {
@@ -45,22 +46,28 @@ adminRouter.post("/approveConsumer", async (req, res) => {
       .update({ approved: true, status: "Approved" } as User);
 
     approvedConsumer.writeTime
-      ? res.status(200).json({
-          success: true,
-          message: `Approved Consumer ${consumer.fullName}`,
-          approvedConsumerId: consumerId,
-        })
-      : res.status(500).json({
-          success: false,
-          message: "Error while approving consumer, please try again",
-        });
+      ? res
+          .status(200)
+          .json({
+            success: true,
+            message: `Approved Consumer ${consumer.fullName}`,
+            approvedConsumerId: consumerId,
+          })
+      : res
+          .status(500)
+          .json({
+            success: false,
+            message: "Error while approving consumer, please try again",
+          });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({
-      message: "Error while changing approval status (Acceptance)",
-      error: err.message,
-      success: false,
-    });
+    return res
+      .status(500)
+      .json({
+        message: "Error while changing approval status (Acceptance)",
+        error: err.message,
+        success: false,
+      });
   }
 });
 
@@ -93,29 +100,37 @@ adminRouter.post("/rejectConsumer", async (req, res) => {
       throw new Error(`Consumer ${consumer.fullName} already approved`);
     }
 
-    const approvedConsumer = await consumerCollection.doc(consumerId).update({
-      approved: false,
-      status: "Rejected",
-      rejectionReason: req.body.rejectionReason,
-    } as User);
+    const approvedConsumer = await consumerCollection
+      .doc(consumerId)
+      .update({
+        approved: false,
+        status: "Rejected",
+        rejectionReason: req.body.rejectionReason,
+      } as User);
 
     approvedConsumer.writeTime
-      ? res.status(200).json({
-          success: true,
-          message: `Rejected Consumer ${consumer.fullName}`,
-          rejectedConsumerId: consumerId,
-        })
-      : res.status(500).json({
-          success: false,
-          message: "Error while rejecting consumer, please try again",
-        });
+      ? res
+          .status(200)
+          .json({
+            success: true,
+            message: `Rejected Consumer ${consumer.fullName}`,
+            rejectedConsumerId: consumerId,
+          })
+      : res
+          .status(500)
+          .json({
+            success: false,
+            message: "Error while rejecting consumer, please try again",
+          });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({
-      message: "Error while changing approval status (Rejection)",
-      error: err.message,
-      success: false,
-    });
+    return res
+      .status(500)
+      .json({
+        message: "Error while changing approval status (Rejection)",
+        error: err.message,
+        success: false,
+      });
   }
 });
 
@@ -247,5 +262,49 @@ adminRouter.get("/consumerApplicationDetails/:consumerId", async (req, res) => {
       error: err,
       success: false,
     });
+  }
+});
+
+adminRouter.put("/updateComplaintStatus", async (req, res) => {
+  try {
+    const consumerId = req.body.consumerDocId;
+    if (!consumerId) {
+      throw new Error("ConsumerId cannot be null or undefined");
+    }
+
+    const complaint = (
+      await complaintCollection.where("consumerDocId", "==", consumerId).get()
+    ).docs[0];
+    if (!complaint.id) {
+      throw new Error("complaint not found");
+    } else if (complaint.data().status == "Rejected") {
+      throw new Error(`compliant already rejected, cannot Resolve`);
+    } else if (complaint.data().status == "Resolved") {
+      throw new Error(`Complaint already Resolved`);
+    }
+    const resolvedComplaintConsumer = await complaintCollection
+      .doc(complaint.id)
+      .update({ status: req.body.status } as Complaint);
+
+    resolvedComplaintConsumer.writeTime
+      ? res
+          .status(200)
+          .json({ success: true, message: `Resolved Consumer complaint ` })
+      : res
+          .status(500)
+          .json({
+            success: false,
+            message:
+              "Error while Resolving consumer complaint , please try again",
+          });
+  } catch (err) {
+    console.log(err);
+    return res
+      .status(500)
+      .json({
+        message: "Error while changing  status (Acceptance)",
+        error: err.message,
+        success: false,
+      });
   }
 });
