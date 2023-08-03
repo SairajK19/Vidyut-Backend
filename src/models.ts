@@ -50,19 +50,19 @@ export type Billing = {
 export type DomesticRate = {
   slabs: Array<ECSlab>;
   fixedChargeRate: number;
-  latest: boolean
+  latest: boolean;
 };
 
 export type IndustrialRate = {
   slabs: Array<IndustrialSlab>;
   fixedChargeRate: number;
-  latest: boolean
+  latest: boolean;
 };
 
 export type CommercialRate = {
   slabs: Array<ECSlab>;
   fixedChargeRate: Array<CommercialFCSlab>;
-  latest: boolean
+  latest: boolean;
 };
 
 export type Complaint = {
