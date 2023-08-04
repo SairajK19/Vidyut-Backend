@@ -460,3 +460,10 @@ export const calculateIndustrialTotalCharge = async (
     },
   };
 };
+
+export const changeRateDocAndUpdateBill = (
+  consumption: number,
+  rateDocData: IndustrialRate,
+  consumer: User,
+  rateDocId: string
+) => {};

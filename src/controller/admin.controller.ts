@@ -9,8 +9,11 @@ import {
 } from "../models";
 import {
   billingCollection,
+  commercialRateCollection,
   complaintCollection,
   consumerCollection,
+  domesticRateCollection,
+  industrialRateCollection,
 } from "../services/initDb";
 import {
   ConsumerFetchDetails,
@@ -462,6 +465,113 @@ adminRouter.post("/billCorrectionMeterReading", async (req, res) => {
       error: err.message,
       success: false,
     });
+  }
+});
+
+/**
+ * rateType: "Domestic" | "Commercial" | "Industrial",
+ * slabs: Array<ECSlab | IndustrialSlab>
+ * complaintId: string
+ */
+adminRouter.post("/billCorrectionSlabRate", async (req, res) => {
+  try {
+    const compliant = (
+      await complaintCollection.doc(req.body.complaintId).get()
+    ).data() as Complaint;
+
+    const currentBillData = (
+      await billingCollection.doc(compliant.billDocId).get()
+    ).data() as Billing;
+
+    const consumer = await consumerCollection
+      .doc(currentBillData.consumerDocId)
+      .get();
+
+    var calculatedTotalCharge: {
+      totalCharge: number;
+      breakage: Array<Breakage>;
+      fixedCharge: { amount: number; calculation: string };
+    } = null;
+    var rateDoc = null;
+
+    switch (currentBillData.consumerType) {
+      case "Domestic":
+        await domesticRateCollection.doc(currentBillData.rateDocId).update({
+          slabs: req.body.slabs,
+        } as DomesticRate);
+
+        rateDoc = await getCorrespondingBillRateDoc(
+          currentBillData.consumerType,
+          currentBillData.rateDocId
+        );
+
+        console.log(currentBillData.consumption, "CONSUMPTION");
+        calculatedTotalCharge = await calculateDomesticOrCommercialTotalCharge(
+          currentBillData.consumption,
+          rateDoc.data() as DomesticRate,
+          consumer.data() as User
+        );
+        break;
+      case "Commercial":
+        await commercialRateCollection.doc(currentBillData.rateDocId).update({
+          slabs: req.body.slabs,
+        } as DomesticRate);
+
+        rateDoc = await getCorrespondingBillRateDoc(
+          currentBillData.consumerType,
+          currentBillData.rateDocId
+        );
+
+        calculatedTotalCharge = await calculateDomesticOrCommercialTotalCharge(
+          currentBillData.consumption,
+          rateDoc.data() as CommercialRate,
+          consumer.data() as User
+        );
+        break;
+      case "Industrial":
+        await industrialRateCollection.doc(currentBillData.rateDocId).update({
+          slabs: req.body.slabs,
+        } as DomesticRate);
+
+        rateDoc = await getCorrespondingBillRateDoc(
+          currentBillData.consumerType,
+          currentBillData.rateDocId
+        );
+
+        calculatedTotalCharge = await calculateIndustrialTotalCharge(
+          currentBillData.consumption,
+          rateDoc.data() as IndustrialRate,
+          consumer.data() as User
+        );
+        break;
+    }
+
+    const updatedBill = await billingCollection
+      .doc(compliant.billDocId)
+      .update({
+        ...currentBillData,
+        currentReading: Number(req.body.newReading),
+        consumption: currentBillData.consumption,
+        breakage: calculatedTotalCharge.breakage,
+        totalCharge: calculatedTotalCharge.totalCharge,
+      } as Billing);
+
+    updatedBill
+      ? res.status(200).json({
+          success: true,
+          message: "Updated bill successfully",
+          oldBreakage: currentBillData.breakage,
+          newBreakage: calculatedTotalCharge.breakage,
+          oldBillAmount: currentBillData.totalCharge,
+          newBillAmount: calculatedTotalCharge.totalCharge,
+        })
+      : res.status(500).json({
+          success: false,
+          message: "New bill generation failed, please try again",
+        });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, message: "internal server error" });
   }
 });
 

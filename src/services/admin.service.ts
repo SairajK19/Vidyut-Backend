@@ -11,23 +11,21 @@ export type ConsumerFetchDetails = {
   status: UserApplicationStatus;
 };
 
-export async function fetchComplaints(): Promise<
-    Array<Complaint>
-> {
-    const complaintSnapshot = await complaintCollection.get();
-    const complaints: Array<Complaint> = [];
-    console.log(`Total Complaints: ${complaintSnapshot.size}`)
+export async function fetchComplaints(): Promise<Array<Complaint>> {
+  const complaintSnapshot = await complaintCollection.get();
+  const complaints: Array<Complaint> = [];
+  console.log(`Total Complaints: ${complaintSnapshot.size}`);
 
-    complaintSnapshot.forEach((cmptDoc) => {
-        const complaintData = cmptDoc.data() as Complaint;
-        complaints.push({
-            description: complaintData.description,
-            status: complaintData.status,
-            billDocId: complaintData.billDocId,
-            consumerDocId: complaintData.consumerDocId
-        });
+  complaintSnapshot.forEach((cmptDoc) => {
+    const complaintData = cmptDoc.data() as Complaint;
+    complaints.push({
+      description: complaintData.description,
+      status: complaintData.status,
+      billDocId: complaintData.billDocId,
+      consumerDocId: complaintData.consumerDocId,
     });
-    return complaints;
+  });
+  return complaints;
 }
 
 export async function fetchConsumer(): Promise<Array<ConsumerFetchDetails>> {
@@ -60,9 +58,9 @@ export async function updateConsumerDetails(
   const updateConsumerDetails = await consumerCollection
     .doc(consumerId)
     .update({
-       meterNumber,
-       phoneNumber,
-       subsidyRate,
+      meterNumber,
+      phoneNumber,
+      subsidyRate,
     });
 
   return updateConsumerDetails;
