@@ -16,6 +16,7 @@ import {
   ConsumerFetchDetails,
   fetchComplaints,
   fetchConsumer,
+  updateBillingStatus,
   updateConsumerDetails,
 } from "../services/admin.service";
 import { Breakage, ConsumerType } from "custom";
@@ -520,6 +521,22 @@ adminRouter.put("/updateConsumers", async (req, res) => {
     console.log(err);
     res.status(500).json({ success: false, message: "internal server error" });
   }
+});
+
+adminRouter.put("/updatePaymentStatus", async (req, res) => {
+  try {
+    console.log(req.body);
+    const updatedStatus = await updateBillingStatus(req.body.billId);
+    updatedStatus? res.status(200).json({
+          success: true,
+          message: "Updated Payment status successfully",
+        })
+      : res.status(500).json({ success: false, message: "Payment status update failed" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+
 });
 
 /**
