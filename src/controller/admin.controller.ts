@@ -352,6 +352,19 @@ adminRouter.post("/createBill", async (req, res) => {
             //   | IndustrialRate,
           };
 
+          const oldBill = (
+            await billingCollection
+              .where("consumerDocId", "==", reading.consumerId)
+              .where("latest", "==", true)
+              .get()
+          ).docs[0];
+
+          if (oldBill) {
+            await billingCollection
+              .doc(oldBill.id)
+              .update({ latest: false } as Billing);
+          }
+
           await billingCollection.add(bill);
           bills.push(bill);
         }
