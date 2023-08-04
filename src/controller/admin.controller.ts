@@ -24,6 +24,7 @@ import {
   addIndustrialRate,
   calculateDomesticOrCommercialTotalCharge,
   calculateIndustrialTotalCharge,
+  getCorrespondingBillRateDoc,
   getRateDoc,
   updateCommercialRate,
   updateDomesticRate,
@@ -149,7 +150,8 @@ adminRouter.post("/rejectConsumer", async (req, res) => {
  * {
  *  rateType: "Domestic" | "Commercial" | "Industrial",
  *  slabs: Array<ECSlab | IndustrialSlab>,
- *  fixedChargeRate: number | Array<CommercialFCSlab>
+ *  fixedChargeRate: number | Array<CommercialFCSlab>,
+ *  validTill: string
  * }
  */
 adminRouter.post("/createRate", async (req, res) => {
@@ -295,6 +297,7 @@ adminRouter.post("/createBill", async (req, res) => {
             fixedCharge: { amount: number; calculation: string };
           } = null;
 
+          // Add subsidy percentage
           switch (consumer.consumerType) {
             case "Commercial":
               console.log("Commercial");
@@ -335,7 +338,7 @@ adminRouter.post("/createBill", async (req, res) => {
             consumption:
               reading.currentReading -
               (previousBill ? previousBill.currentReading : 0),
-            currentDate: new Date(reading.dateOfReading),
+            currentDate: reading.dateOfReading,
             currentReading: reading.currentReading,
             meterNumber: consumer.meterNumber,
             paymentDate: null,
@@ -346,10 +349,6 @@ adminRouter.post("/createBill", async (req, res) => {
             totalCharge: calculatedTotalCharge.totalCharge,
             breakage: calculatedTotalCharge.breakage,
             consumerType: consumer.consumerType,
-            // rateDocument: rateDoc.data() as
-            //   | DomesticRate
-            //   | CommercialRate
-            //   | IndustrialRate,
           };
 
           const oldBill = (
@@ -384,9 +383,77 @@ adminRouter.post("/createBill", async (req, res) => {
   }
 });
 
-adminRouter.post("/updateAndRegenBill", async (req, res) => {
+/**
+ * {
+ *  billId: string,
+ *  newReading: number
+ * }
+ */
+adminRouter.post("/billCorrectionMeterReading", async (req, res) => {
   try {
-    res.send("TODO: Update and regenerate Bill");
+    const currentBillData = (
+      await billingCollection.doc(req.body.billId).get()
+    ).data() as Billing;
+    const rateDoc = await getCorrespondingBillRateDoc(
+      currentBillData.consumerType,
+      currentBillData.rateDocId
+    );
+    const consumer = await consumerCollection
+      .doc(currentBillData.consumerDocId)
+      .get();
+
+    var calculatedTotalCharge: {
+      totalCharge: number;
+      breakage: Array<Breakage>;
+      fixedCharge: { amount: number; calculation: string };
+    } = null;
+
+    switch (currentBillData.consumerType) {
+      case "Domestic":
+        calculatedTotalCharge = await calculateDomesticOrCommercialTotalCharge(
+          Number(req.body.newReading) - currentBillData.previousReading,
+          rateDoc.data() as DomesticRate,
+          consumer.data() as User
+        );
+        break;
+      case "Commercial":
+        calculatedTotalCharge = await calculateDomesticOrCommercialTotalCharge(
+          Number(req.body.newReading) - currentBillData.previousReading,
+          rateDoc.data() as DomesticRate,
+          consumer.data() as User
+        );
+        break;
+      case "Industrial":
+        calculatedTotalCharge = await calculateDomesticOrCommercialTotalCharge(
+          Number(req.body.newReading) - currentBillData.previousReading,
+          rateDoc.data() as DomesticRate,
+          consumer.data() as User
+        );
+        break;
+    }
+
+    const updatedBill = await billingCollection.doc(req.body.billId).update({
+      ...currentBillData,
+      currentReading: Number(req.body.newReading),
+      consumption:
+        Number(req.body.newReading) - currentBillData.previousReading,
+      breakage: calculatedTotalCharge.breakage,
+      totalCharge: calculatedTotalCharge.totalCharge,
+    } as Billing);
+
+    updatedBill
+      ? res.status(200).json({
+          success: true,
+          message: "Updated bill successfully",
+          oldBreakage: currentBillData.breakage,
+          newBreakage: calculatedTotalCharge.breakage,
+          oldBillAmount: currentBillData.totalCharge,
+          newBillAmount: calculatedTotalCharge.totalCharge,
+        })
+      : res.status(500).json({
+          success: false,
+          message: "New bill generation failed, please try again",
+        });
   } catch (err) {
     console.log(err);
     return res.status(500).json({
@@ -425,7 +492,8 @@ adminRouter.get("/fetchConsumers", async (_req, res) => {
     "consumerId": string,
     "meterNumber": Number,
     "phoneNumber":Number,
-    "subsidyRate":Number}
+    "subsidyRate":Number
+  }
  * 
     This route will be used to update the details of consumer(meternumber,phoneNumber,subsidyRate)
 */

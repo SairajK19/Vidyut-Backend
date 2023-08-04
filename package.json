@@ -30,6 +30,7 @@
     "firebase-functions": "^3.18.0",
     "firestore-schema-validator": "^0.8.0",
     "http": "^0.0.1-security",
+    "moment": "^2.29.4",
     "prettier": "^2.8.7",
     "prettier-format": "^3.1.0",
     "ts-node-dev": "^2.0.0"

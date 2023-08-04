@@ -12,11 +12,12 @@ import {
 } from "./initDb";
 import { CommercialRate, DomesticRate, IndustrialRate, User } from "../models";
 import { DomesticRangeRates } from "../lib/utils";
+import moment from "moment";
 
 export const addDomesticRate = async (rateBody: {
   rateType: "Domestic" | "Commercial" | "Industrial";
   slabs: Array<ECSlab>;
-  validTill: Date;
+  validTill: string;
   fixedChargeRate: number;
 }) => {
   try {
@@ -38,8 +39,8 @@ export const addDomesticRate = async (rateBody: {
       fixedChargeRate: rateBody.fixedChargeRate,
       slabs: rateBody.slabs,
       latest: true,
-      validFrom: new Date(),
-      validTill: new Date(rateBody.validTill),
+      validFrom: moment().format("MM-DD-YYYY").toString(),
+      validTill: rateBody.validTill,
       type: "Domestic",
     } as DomesticRate);
 
@@ -56,7 +57,7 @@ export const addDomesticRate = async (rateBody: {
 export const addCommercialRate = async (rateBody: {
   rateType: "Domestic" | "Commercial" | "Industrial";
   slabs: Array<ECSlab>;
-  validTill: Date;
+  validTill: string;
   fixedChargeRate: number | Array<CommercialFCSlab>;
 }) => {
   try {
@@ -78,8 +79,8 @@ export const addCommercialRate = async (rateBody: {
       fixedChargeRate: rateBody.fixedChargeRate,
       slabs: rateBody.slabs,
       latest: true,
-      validFrom: new Date(),
-      validTill: new Date(rateBody.validTill),
+      validFrom: moment().format("MM-DD-YYYY").toString(),
+      validTill: rateBody.validTill,
       type: "Commercial",
     } as CommercialRate);
 
@@ -97,7 +98,7 @@ export const addCommercialRate = async (rateBody: {
 export const addIndustrialRate = async (rateBody: {
   rateType: "Domestic" | "Commercial" | "Industrial";
   slabs: Array<ECSlab | IndustrialSlab>;
-  validTill: Date;
+  validTill: string;
   fixedChargeRate: number;
 }) => {
   try {
@@ -116,12 +117,21 @@ export const addIndustrialRate = async (rateBody: {
         .update({ latest: false } as IndustrialRate);
     }
 
+    console.log({
+      fixedChargeRate: rateBody.fixedChargeRate,
+      slabs: rateBody.slabs,
+      latest: true,
+      validFrom: moment().format("MM-DD-YYYY").toString(),
+      validTill: rateBody.validTill,
+      type: "Industrial",
+    });
+
     const createdRate = await industrialRateCollection.add({
       fixedChargeRate: rateBody.fixedChargeRate,
       slabs: rateBody.slabs,
       latest: true,
-      validFrom: new Date(),
-      validTill: new Date(rateBody.validTill),
+      validFrom: moment().format("MM-DD-YYYY").toString(),
+      validTill: rateBody.validTill,
       type: "Industrial",
     } as IndustrialRate);
 
@@ -136,7 +146,7 @@ export const addIndustrialRate = async (rateBody: {
   }
 };
 
-export const updateDomesticRate = async ( rateBody: {
+export const updateDomesticRate = async (rateBody: {
   rateType: "Domestic" | "Commercial" | "Industrial";
   slabs: Array<ECSlab>;
   fixedChargeRate: number;
@@ -151,10 +161,12 @@ export const updateDomesticRate = async ( rateBody: {
       await domesticRateCollection.where("latest", "==", true).get()
     ).docs[0];
 
-    const updatedRate = await domesticRateCollection.doc(currentRateDoc.id).update({
-      fixedChargeRate: rateBody.fixedChargeRate,
-      slabs: rateBody.slabs,
-    } as DomesticRate);
+    const updatedRate = await domesticRateCollection
+      .doc(currentRateDoc.id)
+      .update({
+        fixedChargeRate: rateBody.fixedChargeRate,
+        slabs: rateBody.slabs,
+      } as DomesticRate);
 
     if (updatedRate) {
       return true;
@@ -166,7 +178,7 @@ export const updateDomesticRate = async ( rateBody: {
   }
 };
 
-export const updateIndustrialRate = async ( rateBody: {
+export const updateIndustrialRate = async (rateBody: {
   rateType: "Domestic" | "Commercial" | "Industrial";
   slabs: Array<ECSlab | IndustrialSlab>;
   fixedChargeRate: number;
@@ -184,10 +196,12 @@ export const updateIndustrialRate = async ( rateBody: {
 
     console.log(currentRateDoc.data);
 
-    const updatedRate = await industrialRateCollection.doc(currentRateDoc.id).update({
-      fixedChargeRate: rateBody.fixedChargeRate,
-      slabs: rateBody.slabs,
-    } as IndustrialRate);
+    const updatedRate = await industrialRateCollection
+      .doc(currentRateDoc.id)
+      .update({
+        fixedChargeRate: rateBody.fixedChargeRate,
+        slabs: rateBody.slabs,
+      } as IndustrialRate);
 
     if (updatedRate) {
       return true;
@@ -214,10 +228,12 @@ export const updateCommercialRate = async (rateBody: {
       await commercialRateCollection.where("latest", "==", true).get()
     ).docs[0];
 
-    const updatedRate = await commercialRateCollection.doc(currentRateDoc.id).update({
-      fixedChargeRate: rateBody.fixedChargeRate,
-      slabs: rateBody.slabs,
-    } as CommercialRate);
+    const updatedRate = await commercialRateCollection
+      .doc(currentRateDoc.id)
+      .update({
+        fixedChargeRate: rateBody.fixedChargeRate,
+        slabs: rateBody.slabs,
+      } as CommercialRate);
 
     if (updatedRate) {
       return true;
@@ -229,7 +245,6 @@ export const updateCommercialRate = async (rateBody: {
     throw new Error(err.message);
   }
 };
-
 
 export const getRateDoc = async (consumerType: ConsumerType) => {
   try {
@@ -255,7 +270,34 @@ export const getRateDoc = async (consumerType: ConsumerType) => {
     if (!rateDoc) {
       throw new Error(`No valid document for ${consumerType} found`);
     }
+    return rateDoc;
+  } catch (err) {
+    console.log(err);
+    throw new Error(err.message);
+  }
+};
 
+export const getCorrespondingBillRateDoc = async (
+  consumerType: ConsumerType,
+  rateDocId: string
+) => {
+  try {
+    var rateDoc = null;
+    switch (consumerType) {
+      case "Domestic":
+        rateDoc = await domesticRateCollection.doc(rateDocId).get();
+        break;
+      case "Commercial":
+        rateDoc = await commercialRateCollection.doc(rateDocId).get();
+        break;
+      case "Industrial":
+        rateDoc = await industrialRateCollection.doc(rateDocId).get();
+        break;
+    }
+
+    if (!rateDoc) {
+      throw new Error(`No valid document for ${consumerType} found`);
+    }
     return rateDoc;
   } catch (err) {
     console.log(err);
@@ -331,7 +373,7 @@ export const calculateDomesticOrCommercialTotalCharge = async (
       );
     }
 
-    console.log("Fixed Charge", fixedCharge)
+    console.log("Fixed Charge", fixedCharge);
 
     return {
       breakage: breakage,

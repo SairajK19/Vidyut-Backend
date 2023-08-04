@@ -37,9 +37,9 @@ export type Billing = {
   consumerType: ConsumerType;
   sanctionedLoad: number;
   meterNumber: number;
-  currentDate: Date;
+  currentDate: string;
   currentReading: number;
-  paymentDate: Date;
+  paymentDate: string;
   previousReading: number;
   consumption: number;
   breakage: Array<Breakage>;
@@ -55,8 +55,8 @@ export type DomesticRate = {
   slabs: Array<ECSlab>;
   fixedChargeRate: number;
   latest: boolean;
-  validFrom: Date;
-  validTill: Date;
+  validFrom: string;
+  validTill: string;
   type: "Domestic";
 };
 
@@ -64,8 +64,8 @@ export type IndustrialRate = {
   slabs: Array<IndustrialSlab>;
   fixedChargeRate: number;
   latest: boolean;
-  validFrom: Date;
-  validTill: Date;
+  validFrom: string;
+  validTill: string;
   type: "Industrial";
 };
 
@@ -73,8 +73,8 @@ export type CommercialRate = {
   slabs: Array<ECSlab>;
   fixedChargeRate: Array<CommercialFCSlab>;
   latest: boolean;
-  validFrom: Date;
-  validTill: Date;
+  validFrom: string;
+  validTill: string;
   type: "Commercial";
 };
 
