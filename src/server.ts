@@ -40,7 +40,7 @@ app.use(
 server.listen(port, async () => {
   app.use("/api/admin", verifyAdmin, adminRouter);
   app.use("/api/consumer", consumerRouter);
-  app.use("/api/auth", auth, authRouter);
+  app.use("/api/auth", authRouter);
 
   app.get("/", (_req: Request, res: Response) => {
     res.send("I am alive, connected successfully");
