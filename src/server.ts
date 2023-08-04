@@ -5,7 +5,7 @@ import * as http from "http";
 import { FirestoreStore } from "@google-cloud/connect-firestore";
 import session from "express-session";
 import { db } from "./services/initDb";
-import { auth, verifyAdmin } from "./middleware/auth";
+import { verifyAdmin } from "./middleware/auth";
 import { adminRouter } from "./controller/admin.controller";
 import { consumerRouter } from "./controller/consumer.controller";
 import { authRouter } from "./controller/auth.controller";

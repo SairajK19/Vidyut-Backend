@@ -16,13 +16,12 @@ import {
   industrialRateCollection,
 } from "../services/initDb";
 import {
-  ConsumerFetchDetails,
   fetchComplaints,
   fetchConsumer,
   updateBillingStatus,
   updateConsumerDetails,
 } from "../services/admin.service";
-import { Breakage, ConsumerType } from "custom";
+import { Breakage, ConsumerType, ConsumerFetchDetails } from "custom";
 import {
   addCommercialRate,
   addDomesticRate,
@@ -237,10 +236,6 @@ adminRouter.post("/updateRate", async (req, res) => {
     });
   }
 });
-
-interface BillResponse extends Billing {
-  rateDocument: DomesticRate | IndustrialRate | CommercialRate;
-}
 
 /**
  * This route will be used to create a bill
@@ -588,7 +583,7 @@ adminRouter.get("/fetchConsumers", async (_req, res) => {
       ? res.status(200).json({
           success: true,
           message: "fetched consumer successfully",
-          fetchedConsumerIds: fetchedConsumers,
+          fetchedConsumers: fetchedConsumers,
         })
       : res
           .status(500)
@@ -601,17 +596,16 @@ adminRouter.get("/fetchConsumers", async (_req, res) => {
 
 /**Request param should contain
  * {
-    "consumerId": string,
-    "meterNumber": Number,
-    "phoneNumber":Number,
-    "subsidyRate":Number
-  }
- * 
-    This route will be used to update the details of consumer(meternumber,phoneNumber,subsidyRate)
-*/
+ *  "consumerId": string,
+ *  "meterNumber": Number,
+ *  "phoneNumber":Number,
+ *  "subsidyRate":Number
+ * }
+ *
+ * This route will be used to update the details of consumer (meternumber, phoneNumber, subsidyRate)
+ */
 adminRouter.put("/updateConsumers", async (req, res) => {
   try {
-    console.log(req.body);
     const updatedConsumers = await updateConsumerDetails(
       req.body.consumerId,
       req.body.meterNumber,
@@ -626,27 +620,36 @@ adminRouter.put("/updateConsumers", async (req, res) => {
         })
       : res
           .status(500)
-          .json({ success: false, message: "consumer Updation failed" });
+          .json({ success: false, message: "Consumer updation failed" });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ success: false, message: "internal server error" });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 
+/**
+ * This route will be used to update the payment
+ * status of the bill
+ *
+ * {
+ *  billId: string
+ * }
+ */
 adminRouter.put("/updatePaymentStatus", async (req, res) => {
   try {
-    console.log(req.body);
     const updatedStatus = await updateBillingStatus(req.body.billId);
-    updatedStatus? res.status(200).json({
+    updatedStatus
+      ? res.status(200).json({
           success: true,
           message: "Updated Payment status successfully",
         })
-      : res.status(500).json({ success: false, message: "Payment status update failed" });
+      : res
+          .status(500)
+          .json({ success: false, message: "Payment status update failed" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
-
 });
 
 /**
@@ -694,7 +697,7 @@ adminRouter.get("/fetchComplaints", async (_req, res) => {
       ? res.status(200).json({
           success: true,
           message: "fetched complaints successfully",
-          fetchedConsumerIds: fetchedComplaints,
+          fetchComplaints: fetchedComplaints,
         })
       : res
           .status(500)
@@ -707,14 +710,9 @@ adminRouter.get("/fetchComplaints", async (_req, res) => {
 
 adminRouter.put("/updateComplaintStatus", async (req, res) => {
   try {
-    const consumerId = req.body.consumerDocId;
-    if (!consumerId) {
-      throw new Error("ConsumerId cannot be null or undefined");
-    }
+    const complaintId = req.body.complaintId;
 
-    const complaint = (
-      await complaintCollection.where("consumerDocId", "==", consumerId).get()
-    ).docs[0];
+    const complaint = await complaintCollection.doc(complaintId).get();
     if (!complaint.id) {
       throw new Error("complaint not found");
     } else if (complaint.data().status == "Rejected") {
@@ -722,14 +720,14 @@ adminRouter.put("/updateComplaintStatus", async (req, res) => {
     } else if (complaint.data().status == "Resolved") {
       throw new Error(`Complaint already Resolved`);
     }
-    const resolvedComplaintConsumer = await complaintCollection
+    const changedComplaintStatus = await complaintCollection
       .doc(complaint.id)
       .update({ status: req.body.status } as Complaint);
 
-    resolvedComplaintConsumer.writeTime
+    changedComplaintStatus.writeTime
       ? res.status(200).json({
           success: true,
-          message: `${req.body.status} Consumer complaint`,
+          message: `Changed consumer complaint status to ${req.body.status}`,
         })
       : res.status(500).json({
           success: false,
@@ -739,7 +737,7 @@ adminRouter.put("/updateComplaintStatus", async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(500).json({
-      message: "Error while changing  status (Acceptance)",
+      message: "Error while changing status",
       error: err.message,
       success: false,
     });

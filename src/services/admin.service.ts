@@ -4,16 +4,7 @@ import {
   consumerCollection,
 } from "./initDb";
 import { Complaint, User, UserApplicationStatus } from "../models";
-
-export type ConsumerFetchDetails = {
-  meterNumber: Number;
-  phoneNumber: Number;
-  fullName: string;
-  consumerType: string;
-  consumerId: string;
-  approved: boolean;
-  status: UserApplicationStatus;
-};
+import { ConsumerFetchDetails } from "custom";
 
 export async function fetchComplaints(): Promise<Array<Complaint>> {
   const complaintSnapshot = await complaintCollection.get();

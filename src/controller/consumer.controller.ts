@@ -11,6 +11,17 @@ import { billingCollection, consumerCollection } from "../services/initDb";
 
 export const consumerRouter = Router();
 
+/**
+ * {
+ *  email: string,
+ *  phoneNumber: number,
+ *  fullName: string,
+ *  address: string,
+ *  consumerType: "Domestic" | "Commercial" | "Industrial",
+ *  phase: 1 | 3,
+ *  supportingDocs: Array<string>
+ * }
+*/
 consumerRouter.post("/createConsumer", async (req, res) => {
   try {
     if (
@@ -28,7 +39,6 @@ consumerRouter.post("/createConsumer", async (req, res) => {
       address: req.body.address,
       email: req.body.email,
       meterNumber: await getCurrentUserCount(),
-      //   sanctionedLoad: Number(req.body.sanctionedLoad),
       sanctionedLoad: 0,
       consumerType: req.body.consumerType,
       subsidyRate: 0,
@@ -55,7 +65,12 @@ consumerRouter.post("/createConsumer", async (req, res) => {
   }
 });
 
-consumerRouter.post("/", async (req, res) => {
+/**
+ * {
+ *  consumerDocId: string
+ * }
+ */
+consumerRouter.post("/createComplaint", async (req, res) => {
   try {
     if (
       (await consumerCollection.doc(req.body.consumerDocId).get()).data() ==
@@ -75,12 +90,14 @@ consumerRouter.post("/", async (req, res) => {
 
     const createdComplaint: string = await createComplaint(complaint);
     createdComplaint
-      ? res
-          .status(200)
-          .json({ success: true, message: "created complaint successfully" })
+      ? res.status(200).json({
+          success: true,
+          message: "created complaint successfully",
+          complaintId: createComplaint,
+        })
       : res.status(500).json({
           success: false,
-          message: "consumer complaint creation  failed",
+          message: "consumer complaint creation failed",
         });
   } catch (err) {
     console.log(err);
@@ -91,15 +108,15 @@ consumerRouter.post("/", async (req, res) => {
 consumerRouter.get("/consumerBillDetails/:consumerDocId", async (req, res) => {
   try {
     const consumerId: string = req.params.consumerDocId;
-    const consumerApplication = (
+    const consumerBill = (
       await billingCollection.doc(consumerId).get()
     ).data() as Billing;
 
-    consumerApplication
+    consumerBill
       ? res.status(200).json({
           success: true,
           message: "Consumer bill found",
-          consumerApplication: consumerApplication,
+          consumerBill: consumerBill,
         })
       : res.status(500).json({
           success: false,
@@ -108,7 +125,7 @@ consumerRouter.get("/consumerBillDetails/:consumerDocId", async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(500).json({
-      message: "internal error,Failed to get consumer bill details",
+      message: "internal error, failed to get consumer bill details",
       error: err,
       success: false,
     });
