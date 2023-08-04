@@ -1,13 +1,25 @@
 import { Router } from "express";
 import { ConsumerFetchDetails, fetchConsumer } from "../services/admin.service";
-import { Billing, Complaint, DomesticRate, User } from "../models";
-import { billingCollection, complaintCollection, consumerCollection } from "../services/initDb";
+import {
+  Billing,
+  CommercialRate,
+  Complaint,
+  DomesticRate,
+  IndustrialRate,
+  User,
+} from "../models";
+import {
+  billingCollection,
+  complaintCollection,
+  consumerCollection,
+} from "../services/initDb";
 import { Breakage, ConsumerType } from "custom";
 import {
   addCommercialRate,
   addDomesticRate,
   addIndustrialRate,
-  calculateDomesticTotalCharge,
+  calculateDomesticOrCommercialTotalCharge,
+  calculateIndustrialTotalCharge,
   getRateDoc,
 } from "../services/billing.service";
 
@@ -20,6 +32,7 @@ export const adminRouter = Router();
  * Request body should contain following object
  * {
  *  consumerId: string
+ *  sanctionedLoad: string
  * }
  */
 adminRouter.post("/approveConsumer", async (req, res) => {
@@ -41,33 +54,29 @@ adminRouter.post("/approveConsumer", async (req, res) => {
     } else if (consumer.status == "Approved") {
       throw new Error(`Consumer ${consumer.fullName} already approved`);
     }
-    const approvedConsumer = await consumerCollection
-      .doc(consumerId)
-      .update({ approved: true, status: "Approved" } as User);
+    const approvedConsumer = await consumerCollection.doc(consumerId).update({
+      approved: true,
+      status: "Approved",
+      sanctionedLoad: Number(req.body.sanctionedLoad),
+    } as User);
 
     approvedConsumer.writeTime
-      ? res
-          .status(200)
-          .json({
-            success: true,
-            message: `Approved Consumer ${consumer.fullName}`,
-            approvedConsumerId: consumerId,
-          })
-      : res
-          .status(500)
-          .json({
-            success: false,
-            message: "Error while approving consumer, please try again",
-          });
+      ? res.status(200).json({
+          success: true,
+          message: `Approved Consumer ${consumer.fullName}`,
+          approvedConsumerId: consumerId,
+        })
+      : res.status(500).json({
+          success: false,
+          message: "Error while approving consumer, please try again",
+        });
   } catch (err) {
     console.log(err);
-    return res
-      .status(500)
-      .json({
-        message: "Error while changing approval status (Acceptance)",
-        error: err.message,
-        success: false,
-      });
+    return res.status(500).json({
+      message: "Error while changing approval status (Acceptance)",
+      error: err.message,
+      success: false,
+    });
   }
 });
 
@@ -100,37 +109,29 @@ adminRouter.post("/rejectConsumer", async (req, res) => {
       throw new Error(`Consumer ${consumer.fullName} already approved`);
     }
 
-    const approvedConsumer = await consumerCollection
-      .doc(consumerId)
-      .update({
-        approved: false,
-        status: "Rejected",
-        rejectionReason: req.body.rejectionReason,
-      } as User);
+    const approvedConsumer = await consumerCollection.doc(consumerId).update({
+      approved: false,
+      status: "Rejected",
+      rejectionReason: req.body.rejectionReason,
+    } as User);
 
     approvedConsumer.writeTime
-      ? res
-          .status(200)
-          .json({
-            success: true,
-            message: `Rejected Consumer ${consumer.fullName}`,
-            rejectedConsumerId: consumerId,
-          })
-      : res
-          .status(500)
-          .json({
-            success: false,
-            message: "Error while rejecting consumer, please try again",
-          });
+      ? res.status(200).json({
+          success: true,
+          message: `Rejected Consumer ${consumer.fullName}`,
+          rejectedConsumerId: consumerId,
+        })
+      : res.status(500).json({
+          success: false,
+          message: "Error while rejecting consumer, please try again",
+        });
   } catch (err) {
     console.log(err);
-    return res
-      .status(500)
-      .json({
-        message: "Error while changing approval status (Rejection)",
-        error: err.message,
-        success: false,
-      });
+    return res.status(500).json({
+      message: "Error while changing approval status (Rejection)",
+      error: err.message,
+      success: false,
+    });
   }
 });
 
@@ -183,6 +184,10 @@ adminRouter.post("/createRate", async (req, res) => {
   }
 });
 
+interface BillResponse extends Billing {
+  rateDocument: DomesticRate | IndustrialRate | CommercialRate;
+}
+
 /**
  * This route will be used to create a bill
  *
@@ -198,6 +203,7 @@ adminRouter.post("/createRate", async (req, res) => {
  */
 adminRouter.post("/createBill", async (req, res) => {
   try {
+    const bills: Array<Billing> = [];
     if (req.body.billReadings.length < 1) {
       return res.status(400).json({});
     }
@@ -236,20 +242,49 @@ adminRouter.post("/createBill", async (req, res) => {
               .update({ latest: false });
           }
 
-          const calculatedTotalCharge: {
+          var calculatedTotalCharge: {
             totalCharge: number;
             breakage: Array<Breakage>;
-          } = await calculateDomesticTotalCharge(
-            reading.currentReading -
-              (previousBill ? previousBill.currentReading : 0),
-            rateDoc.data() as DomesticRate,
-            consumer
-          );
+            fixedCharge: { amount: number; calculation: string };
+          } = null;
+
+          switch (consumer.consumerType) {
+            case "Commercial":
+              console.log("Commercial");
+              calculatedTotalCharge =
+                await calculateDomesticOrCommercialTotalCharge(
+                  reading.currentReading -
+                    (previousBill ? previousBill.currentReading : 0),
+                  rateDoc.data() as DomesticRate,
+                  consumer
+                );
+              break;
+            case "Domestic":
+              console.log("Domestic");
+              calculatedTotalCharge =
+                await calculateDomesticOrCommercialTotalCharge(
+                  reading.currentReading -
+                    (previousBill ? previousBill.currentReading : 0),
+                  rateDoc.data() as DomesticRate,
+                  consumer
+                );
+              break;
+            case "Industrial":
+              console.log("Industrial");
+              calculatedTotalCharge = await calculateIndustrialTotalCharge(
+                reading.currentReading -
+                  (previousBill ? previousBill.currentReading : 0),
+                rateDoc.data() as IndustrialRate,
+                consumer
+              );
+              break;
+          }
 
           const bill: Billing = {
             paid: false,
             latest: true,
             consumerDocId: reading.consumerId,
+            sanctionedLoad: consumer.sanctionedLoad,
             consumption:
               reading.currentReading -
               (previousBill ? previousBill.currentReading : 0),
@@ -258,17 +293,27 @@ adminRouter.post("/createBill", async (req, res) => {
             meterNumber: consumer.meterNumber,
             paymentDate: null,
             rateDocId: rateDoc.id,
-            fixedCharge: rateDoc.data().fixedChargeRate,
+            fixedCharge: calculatedTotalCharge.fixedCharge,
             meterRent: consumer.phase == 1 ? 15 : 25,
             previousReading: previousBill ? previousBill.currentReading : 0,
             totalCharge: calculatedTotalCharge.totalCharge,
             breakage: calculatedTotalCharge.breakage,
+            consumerType: consumer.consumerType,
+            // rateDocument: rateDoc.data() as
+            //   | DomesticRate
+            //   | CommercialRate
+            //   | IndustrialRate,
           };
 
-          console.log(bill);
+          await billingCollection.add(bill);
+          bills.push(bill);
         }
       )
     );
+
+    res
+      .status(200)
+      .json({ addedBills: bills, success: true, createdBills: bills.length });
   } catch (err) {
     console.log(err);
     return res.status(500).json({
@@ -370,24 +415,21 @@ adminRouter.put("/updateComplaintStatus", async (req, res) => {
       .update({ status: req.body.status } as Complaint);
 
     resolvedComplaintConsumer.writeTime
-      ? res
-          .status(200)
-          .json({ success: true, message: `Resolved Consumer complaint ` })
-      : res
-          .status(500)
-          .json({
-            success: false,
-            message:
-              "Error while Resolving consumer complaint , please try again",
-          });
+      ? res.status(200).json({
+          success: true,
+          message: `${req.body.status} Consumer complaint`,
+        })
+      : res.status(500).json({
+          success: false,
+          message:
+            "Error while changing consumer complaint status , please try again",
+        });
   } catch (err) {
     console.log(err);
-    return res
-      .status(500)
-      .json({
-        message: "Error while changing  status (Acceptance)",
-        error: err.message,
-        success: false,
-      });
+    return res.status(500).json({
+      message: "Error while changing  status (Acceptance)",
+      error: err.message,
+      success: false,
+    });
   }
 });

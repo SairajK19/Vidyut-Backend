@@ -18,7 +18,6 @@ export const addDomesticRate = async (rateBody: {
   slabs: Array<ECSlab>;
   validTill: Date;
   fixedChargeRate: number;
-  upperLimit: number;
 }) => {
   try {
     if (rateBody.slabs.length != 5) {
@@ -41,6 +40,7 @@ export const addDomesticRate = async (rateBody: {
       latest: true,
       validFrom: new Date(),
       validTill: new Date(rateBody.validTill),
+      type: "Domestic",
     } as DomesticRate);
 
     if (createdRate) {
@@ -80,6 +80,7 @@ export const addCommercialRate = async (rateBody: {
       latest: true,
       validFrom: new Date(),
       validTill: new Date(rateBody.validTill),
+      type: "Commercial",
     } as CommercialRate);
 
     if (createdRate) {
@@ -121,6 +122,7 @@ export const addIndustrialRate = async (rateBody: {
       latest: true,
       validFrom: new Date(),
       validTill: new Date(rateBody.validTill),
+      type: "Industrial",
     } as IndustrialRate);
 
     if (createdRate) {
@@ -156,7 +158,7 @@ export const getRateDoc = async (consumerType: ConsumerType) => {
     }
 
     if (!rateDoc) {
-      throw new Error(`No valid document for ${consumerType} not found`);
+      throw new Error(`No valid document for ${consumerType} found`);
     }
 
     return rateDoc;
@@ -166,22 +168,158 @@ export const getRateDoc = async (consumerType: ConsumerType) => {
   }
 };
 
-export const calculateDomesticTotalCharge = async (
+export const calculateDomesticOrCommercialTotalCharge = async (
   consumption: number,
-  rateDocData: DomesticRate,
+  rateDocData: DomesticRate | CommercialRate,
   consumer: User
-): Promise<{ totalCharge: number; breakage: Array<Breakage> } | null> => {
-  try {
-    const breakage: Array<Breakage> = [];
-    var totalCharge = 0;
+): Promise<{
+  totalCharge: number;
+  breakage: Array<Breakage>;
+  fixedCharge: { amount: number; calculation: string };
+} | null> => {
+  const breakage: Array<Breakage> = [];
+  var totalEnergyCharges = 0;
 
-    console.log(`CONSUMER`, consumer);
-    console.log(`RATE_DOC_DATA`, rateDocData);
-    console.log(`CONSUMPTION`, consumption)
+  for (var i = 0; i < rateDocData.slabs.length; i++) {
+    var rate;
+    if (i == 0) {
+      rate = rateDocData.slabs.find((slab) => slab.range == `0-100`);
+    } else if (i == rateDocData.slabs.length - 1) {
+      rate = rateDocData.slabs.find((slab) => slab.range == ">400");
+    } else {
+      rate = rateDocData.slabs.find(
+        (slab) => slab.range == `${100 * i + 1}-${100 * (i + 1)}`
+      );
+    }
 
-    return null;
-  } catch (err) {
-    console.log(err);
-    throw new Error(err.message);
+    if (consumption < 100 || rate.range == ">400") {
+      breakage.push({
+        amount: Math.round(consumption * rate.pricePerUnit),
+        quantity: consumption,
+        rate: rate.pricePerUnit,
+      });
+
+      totalEnergyCharges += consumption * rate.pricePerUnit;
+      consumption -= consumption;
+    } else {
+      breakage.push({
+        amount: Math.round(100 * rate.pricePerUnit),
+        quantity: 100,
+        rate: rate.pricePerUnit,
+      });
+
+      totalEnergyCharges += 100 * rate.pricePerUnit;
+      consumption -= 100;
+    }
+
+    if (consumption == 0) {
+      break;
+    }
   }
+
+  if (
+    consumer.consumerType == "Commercial" &&
+    rateDocData.type == "Commercial"
+  ) {
+    const fixedCharge =
+      consumer.sanctionedLoad < 20
+        ? rateDocData.fixedChargeRate.find((charge) => charge.range == "0-20")
+            .pricePerUnit
+        : consumer.sanctionedLoad < 90
+        ? rateDocData.fixedChargeRate.find((charge) => charge.range == "20-90")
+            .pricePerUnit
+        : 0;
+
+    if (fixedCharge == 0) {
+      throw new Error(
+        `Invalid fixed charge, Sanc Load cannot be more than 90. It is ${consumer.sanctionedLoad}`
+      );
+    }
+
+    console.log("Fixed Charge", fixedCharge)
+
+    return {
+      breakage: breakage,
+      totalCharge:
+        totalEnergyCharges +
+        consumer.sanctionedLoad +
+        fixedCharge -
+        consumer.subsidyRate,
+      fixedCharge: {
+        amount: fixedCharge * consumer.sanctionedLoad,
+        calculation: `${fixedCharge} * ${consumer.sanctionedLoad}`,
+      },
+    };
+  } else if (
+    consumer.consumerType == "Domestic" &&
+    rateDocData.type == "Domestic"
+  ) {
+    const fixedCharge = consumer.sanctionedLoad * rateDocData.fixedChargeRate;
+
+    return {
+      breakage: breakage,
+      totalCharge: totalEnergyCharges + fixedCharge - consumer.subsidyRate,
+      fixedCharge: {
+        amount: rateDocData.fixedChargeRate * consumer.sanctionedLoad,
+        calculation: `${rateDocData.fixedChargeRate} * ${consumer.sanctionedLoad}`,
+      },
+    };
+  }
+};
+
+export const calculateIndustrialTotalCharge = async (
+  consumption: number,
+  rateDocData: IndustrialRate,
+  consumer: User
+): Promise<{
+  totalCharge: number;
+  breakage: Array<Breakage>;
+  fixedCharge: { amount: number; calculation: string };
+} | null> => {
+  const breakage: Array<Breakage> = [];
+  var totalEnergyCharges = 0;
+
+  await Promise.all(
+    rateDocData.slabs.map(() => {
+      if (consumption > 500) {
+        const amount =
+          500 *
+          rateDocData.slabs.find((slab) => slab.range == "0-500").pricePerUnit;
+
+        breakage.push({
+          amount: amount,
+          quantity: 500,
+          rate: rateDocData.slabs.find((slab) => slab.range == "0-500")
+            .pricePerUnit,
+        });
+
+        totalEnergyCharges += amount;
+        consumption -= 500;
+      } else if (consumption < 500 && consumption > 0) {
+        const amount =
+          consumption *
+          rateDocData.slabs.find((slab) => slab.range == "0-500").pricePerUnit;
+
+        breakage.push({
+          amount: amount,
+          quantity: consumption,
+          rate: rateDocData.slabs.find((slab) => slab.range == "0-500")
+            .pricePerUnit,
+        });
+
+        totalEnergyCharges += amount;
+        consumption -= consumption;
+      }
+    })
+  );
+  const fixedCharge = consumer.sanctionedLoad * rateDocData.fixedChargeRate;
+
+  return {
+    breakage: breakage,
+    totalCharge: totalEnergyCharges + fixedCharge - consumer.subsidyRate,
+    fixedCharge: {
+      amount: rateDocData.fixedChargeRate * consumer.sanctionedLoad,
+      calculation: `${rateDocData.fixedChargeRate}*${consumer.sanctionedLoad}`,
+    },
+  };
 };
