@@ -55,7 +55,7 @@ consumerRouter.post("/createConsumer", async (req, res) => {
   }
 });
 
-consumerRouter.post("/createComplaint", async (req, res) => {
+consumerRouter.post("/", async (req, res) => {
   try {
     if (
       (await consumerCollection.doc(req.body.consumerDocId).get()).data() ==

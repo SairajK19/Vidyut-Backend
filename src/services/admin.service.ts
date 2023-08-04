@@ -1,5 +1,5 @@
-import { consumerCollection } from "./initDb";
-import { User, UserApplicationStatus } from "../models";
+import { complaintCollection, consumerCollection } from "./initDb";
+import { Complaint, User, UserApplicationStatus } from "../models";
 
 export type ConsumerFetchDetails= {
     meterNumber: Number,
@@ -9,6 +9,25 @@ export type ConsumerFetchDetails= {
     consumerId: string,
     approved: boolean
     status: UserApplicationStatus
+}
+
+export async function fetchComplaints(): Promise<
+    Array<Complaint>
+> {
+    const complaintSnapshot = await complaintCollection.get();
+    const complaints: Array<Complaint> = [];
+    console.log(`Total Complaints: ${complaintSnapshot.size}`)
+
+    complaintSnapshot.forEach((cmptDoc) => {
+        const complaintData = cmptDoc.data() as Complaint;
+        complaints.push({
+            description: complaintData.description,
+            status: complaintData.status,
+            billDocId: complaintData.billDocId,
+            consumerDocId: complaintData.consumerDocId
+        });
+    });
+    return complaints;
 }
 
 export async function fetchConsumer(): Promise<
