@@ -14,6 +14,7 @@ import {
 } from "../services/initDb";
 import {
   ConsumerFetchDetails,
+  fetchComplaints,
   fetchConsumer,
   updateConsumerDetails,
 } from "../services/admin.service";
@@ -483,6 +484,29 @@ adminRouter.get("/consumerApplicationDetails/:consumerId", async (req, res) => {
       error: err,
       success: false,
     });
+  }
+});
+
+/**
+ * This route fetches all the consumer applications
+ * to be listed on the distributor's admin dashboard
+ */
+adminRouter.get("/fetchComplaints", async (_req, res) => {
+  try {
+    const fetchedComplaints: Array<Complaint> = await fetchComplaints();
+
+    fetchedComplaints
+      ? res.status(200).json({
+          success: true,
+          message: "fetched complaints successfully",
+          fetchedConsumerIds: fetchedComplaints,
+        })
+      : res
+          .status(500)
+          .json({ success: false, message: "complaint fetching failed" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, message: "internal server error" });
   }
 });
 
