@@ -1,5 +1,5 @@
 import { Router, response } from "express";
-import { User } from "../models";
+import { Billing, User } from "../models";
 import {
   createComplaint,
   createConsumer,
@@ -7,7 +7,7 @@ import {
   userAlreadyExist,
 } from "../services/consumer.service";
 import { Complaint } from "../models";
-import { consumerCollection } from "../services/initDb";
+import { billingCollection, consumerCollection } from "../services/initDb";
 
 export const consumerRouter = Router();
 
@@ -85,5 +85,32 @@ consumerRouter.post("/createComplaint", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, message: "internal server error" });
+  }
+});
+
+consumerRouter.get("/consumerBillDetails/:consumerDocId", async (req, res) => {
+  try {
+    const consumerId: string = req.params.consumerDocId;
+    const consumerApplication = (
+      await billingCollection.doc(consumerId).get()
+    ).data() as Billing;
+
+    consumerApplication
+      ? res.status(200).json({
+          success: true,
+          message: "Consumer bill found",
+          consumerApplication: consumerApplication,
+        })
+      : res.status(500).json({
+          success: false,
+          message: `Failed to get bill details of consumer ${consumerId}`,
+        });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "internal error,Failed to get consumer bill details",
+      error: err,
+      success: false,
+    });
   }
 });

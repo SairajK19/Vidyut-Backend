@@ -9,7 +9,6 @@ import { auth, verifyAdmin } from "./middleware/auth";
 import { adminRouter } from "./controller/admin.controller";
 import { consumerRouter } from "./controller/consumer.controller";
 import { authRouter } from "./controller/auth.controller";
-import { calculateDomesticTotalCharge } from "./services/billing.service";
 
 const port = 8080;
 const app = express();
