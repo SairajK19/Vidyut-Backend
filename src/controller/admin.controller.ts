@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { ConsumerFetchDetails, fetchConsumer } from "../services/admin.service";
 import {
   Billing,
   CommercialRate,
@@ -13,6 +12,11 @@ import {
   complaintCollection,
   consumerCollection,
 } from "../services/initDb";
+import {
+  ConsumerFetchDetails,
+  fetchConsumer,
+  updateConsumerDetails,
+} from "../services/admin.service";
 import { Breakage, ConsumerType } from "custom";
 import {
   addCommercialRate,
@@ -21,6 +25,9 @@ import {
   calculateDomesticOrCommercialTotalCharge,
   calculateIndustrialTotalCharge,
   getRateDoc,
+  updateCommercialRate,
+  updateDomesticRate,
+  updateIndustrialRate,
 } from "../services/billing.service";
 
 export const adminRouter = Router();
@@ -178,6 +185,46 @@ adminRouter.post("/createRate", async (req, res) => {
     console.log(err);
     return res.status(500).json({
       message: "Failed to add rates",
+      error: err.message,
+      success: false,
+    });
+  }
+});
+
+adminRouter.post("/updateRate", async (req, res) => {
+  try {
+    var updatededRate = null;
+
+    switch (req.body.rateType as ConsumerType) {
+      case "Domestic":
+        updatededRate = updateDomesticRate(req.body);
+        break;
+      case "Commercial":
+        updatededRate = await updateCommercialRate(req.body);
+        break;
+      case "Industrial":
+        updatededRate = await updateIndustrialRate(req.body);
+        break;
+      default:
+        return res.status(401).json({
+          success: false,
+          message: `Invalid rate type or consumer type ${req.body.rateType}`,
+        });
+    }
+
+    !updatededRate
+      ? res.status(500).json({
+          success: false,
+          message: "Rate updation failed, please try again",
+        })
+      : res.status(200).json({
+          success: true,
+          message: `Updated rate successfully for ${req.body.rateType}`,
+        });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Failed to update rates",
       error: err.message,
       success: false,
     });
@@ -354,6 +401,39 @@ adminRouter.get("/fetchConsumers", async (_req, res) => {
       : res
           .status(500)
           .json({ success: false, message: "consumer fetching failed" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, message: "internal server error" });
+  }
+});
+
+/**Request param should contain
+ * {
+    "consumerId": string,
+    "meterNumber": Number,
+    "phoneNumber":Number,
+    "subsidyRate":Number}
+ * 
+    This route will be used to update the details of consumer(meternumber,phoneNumber,subsidyRate)
+*/
+adminRouter.put("/updateConsumers", async (req, res) => {
+  try {
+    console.log(req.body);
+    const updatedConsumers = await updateConsumerDetails(
+      req.body.consumerId,
+      req.body.meterNumber,
+      req.body.phoneNumber,
+      req.body.subsidyRate
+    );
+
+    updatedConsumers
+      ? res.status(200).json({
+          success: true,
+          message: "Updated consumer successfully",
+        })
+      : res
+          .status(500)
+          .json({ success: false, message: "consumer Updation failed" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, message: "internal server error" });

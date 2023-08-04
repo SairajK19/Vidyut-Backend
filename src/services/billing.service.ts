@@ -136,6 +136,101 @@ export const addIndustrialRate = async (rateBody: {
   }
 };
 
+export const updateDomesticRate = async ( rateBody: {
+  rateType: "Domestic" | "Commercial" | "Industrial";
+  slabs: Array<ECSlab>;
+  fixedChargeRate: number;
+  upperLimit: number;
+}) => {
+  try {
+    if (rateBody.slabs.length != 5) {
+      throw new Error("Invalid request body");
+    }
+
+    const currentRateDoc = (
+      await domesticRateCollection.where("latest", "==", true).get()
+    ).docs[0];
+
+    const updatedRate = await domesticRateCollection.doc(currentRateDoc.id).update({
+      fixedChargeRate: rateBody.fixedChargeRate,
+      slabs: rateBody.slabs,
+    } as DomesticRate);
+
+    if (updatedRate) {
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.log(err);
+    throw new Error(err.message);
+  }
+};
+
+export const updateIndustrialRate = async ( rateBody: {
+  rateType: "Domestic" | "Commercial" | "Industrial";
+  slabs: Array<ECSlab | IndustrialSlab>;
+  fixedChargeRate: number;
+  upperLimit: number;
+}) => {
+  try {
+    if (rateBody.slabs.length != 2) {
+      throw new Error(
+        "Invalid request body, slab cannot be more or less than 2 for industrial"
+      );
+    }
+    const currentRateDoc = (
+      await industrialRateCollection.where("latest", "==", true).get()
+    ).docs[0];
+
+    console.log(currentRateDoc.data);
+
+    const updatedRate = await industrialRateCollection.doc(currentRateDoc.id).update({
+      fixedChargeRate: rateBody.fixedChargeRate,
+      slabs: rateBody.slabs,
+    } as IndustrialRate);
+
+    if (updatedRate) {
+      return true;
+    }
+
+    return false;
+  } catch (err) {
+    console.log(err);
+    throw new Error(err.message);
+  }
+};
+
+export const updateCommercialRate = async (rateBody: {
+  rateType: "Domestic" | "Commercial" | "Industrial";
+  slabs: Array<ECSlab>;
+  fixedChargeRate: number | Array<CommercialFCSlab>;
+}) => {
+  try {
+    if (rateBody.slabs.length != 5) {
+      throw new Error("Invalid request body");
+    }
+
+    const currentRateDoc = (
+      await commercialRateCollection.where("latest", "==", true).get()
+    ).docs[0];
+
+    const updatedRate = await commercialRateCollection.doc(currentRateDoc.id).update({
+      fixedChargeRate: rateBody.fixedChargeRate,
+      slabs: rateBody.slabs,
+    } as CommercialRate);
+
+    if (updatedRate) {
+      return true;
+    }
+
+    return false;
+  } catch (err) {
+    console.log(err);
+    throw new Error(err.message);
+  }
+};
+
+
 export const getRateDoc = async (consumerType: ConsumerType) => {
   try {
     var rateDoc = null;
