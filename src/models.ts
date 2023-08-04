@@ -34,6 +34,8 @@ export type User = {
 
 export type Billing = {
   consumerDocId: string;
+  consumerType: ConsumerType;
+  sanctionedLoad: number;
   meterNumber: number;
   currentDate: Date;
   currentReading: number;
@@ -41,7 +43,7 @@ export type Billing = {
   previousReading: number;
   consumption: number;
   breakage: Array<Breakage>;
-  fixedCharge: number;
+  fixedCharge: { amount: number; calculation: string };
   meterRent: number;
   totalCharge: number;
   paid: boolean;
@@ -55,6 +57,7 @@ export type DomesticRate = {
   latest: boolean;
   validFrom: Date;
   validTill: Date;
+  type: "Domestic";
 };
 
 export type IndustrialRate = {
@@ -63,6 +66,7 @@ export type IndustrialRate = {
   latest: boolean;
   validFrom: Date;
   validTill: Date;
+  type: "Industrial";
 };
 
 export type CommercialRate = {
@@ -71,6 +75,7 @@ export type CommercialRate = {
   latest: boolean;
   validFrom: Date;
   validTill: Date;
+  type: "Commercial";
 };
 
 export type Complaint = {

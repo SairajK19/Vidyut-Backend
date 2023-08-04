@@ -12,12 +12,16 @@ export async function getCurrentUserCount() {
 
 export async function userAlreadyExist(email: string, phoneNumber: Number) {
   try {
-    const user = (
-      await consumerCollection
-        .where("email", "==", email)
-        .where("phoneNumber", "==", phoneNumber)
-        .get()
+    var user = (
+      await consumerCollection.where("phoneNumber", "==", phoneNumber).get()
     ).docs;
+
+    if (user.length > 0) {
+      return true;
+    }
+
+    var user = (await consumerCollection.where("email", "==", email).get())
+      .docs;
 
     if (user.length > 0) {
       return true;
@@ -29,6 +33,7 @@ export async function userAlreadyExist(email: string, phoneNumber: Number) {
     throw new Error(err.message);
   }
 }
+
 export async function createConsumer(user: User): Promise<string> {
   const addedConsumer = await consumerCollection.add(user);
   console.log(`ConsumerId: ${addedConsumer.id}`);
