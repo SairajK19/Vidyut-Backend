@@ -1,34 +1,55 @@
 import { consumerCollection } from "./initDb";
 import { User, UserApplicationStatus } from "../models";
 
-export type ConsumerFetchDetails= {
-    meterNumber: Number,
-    phoneNumber: Number,
-    fullName: string,
-    consumerType: string,
-    consumerId: string,
-    approved: boolean
-    status: UserApplicationStatus
+export type ConsumerFetchDetails = {
+  meterNumber: Number;
+  phoneNumber: Number;
+  fullName: string;
+  consumerType: string;
+  consumerId: string;
+  approved: boolean;
+  status: UserApplicationStatus;
+};
+
+// export type ConsumerUpdateDetails= {
+//     meterNumber: Number,
+//     phoneNumber: Number,
+// }
+
+export async function fetchConsumer(): Promise<Array<ConsumerFetchDetails>> {
+  const usersSnapshot = await consumerCollection.get();
+  const users: Array<ConsumerFetchDetails> = [];
+  console.log(`Total Consumers: ${usersSnapshot.size}`);
+
+  usersSnapshot.forEach((userDoc) => {
+    const userData = userDoc.data() as User;
+    users.push({
+      meterNumber: userData.meterNumber,
+      phoneNumber: userData.phoneNumber,
+      fullName: userData.fullName,
+      consumerType: userData.consumerType,
+      consumerId: userDoc.id,
+      approved: userData.approved,
+      status: userData.status,
+    });
+  });
+  return users;
 }
 
-export async function fetchConsumer(): Promise<
-    Array<ConsumerFetchDetails>
-> {
-    const usersSnapshot = await consumerCollection.get();
-    const users: Array<ConsumerFetchDetails> = [];
-    console.log(`Total Consumers: ${usersSnapshot.size}`)
-
-    usersSnapshot.forEach((userDoc) => {
-        const userData = userDoc.data() as User;
-        users.push({
-            meterNumber: userData.meterNumber,
-            phoneNumber: userData.phoneNumber,
-            fullName: userData.fullName,
-            consumerType: userData.consumerType,
-            consumerId: userDoc.id,
-            approved: userData.approved,
-            status: userData.status
-        });
+export async function updateConsumerDetails(
+  consumerId: string,
+  meterNumber: number,
+  phoneNumber: number,
+  subsidyRate: number
+) {
+  console.log(consumerId);
+  const updateConsumerDetails = await consumerCollection
+    .doc(consumerId)
+    .update({
+       meterNumber,
+       phoneNumber,
+       subsidyRate,
     });
-    return users;
+
+  return updateConsumerDetails;
 }

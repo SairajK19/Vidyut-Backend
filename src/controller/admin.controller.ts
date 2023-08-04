@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ConsumerFetchDetails, fetchConsumer } from "../services/admin.service";
+import { ConsumerFetchDetails, fetchConsumer, updateConsumerDetails } from "../services/admin.service";
 import { Billing, Complaint, DomesticRate, User } from "../models";
 import { billingCollection, complaintCollection, consumerCollection } from "../services/initDb";
 import { Breakage, ConsumerType } from "custom";
@@ -309,6 +309,34 @@ adminRouter.get("/fetchConsumers", async (_req, res) => {
       : res
           .status(500)
           .json({ success: false, message: "consumer fetching failed" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, message: "internal server error" });
+  }
+});
+
+/**Request param should contain
+ * {
+    "consumerId": string,
+    "meterNumber": Number,
+    "phoneNumber":Number,
+    "subsidyRate":Number}
+ * 
+    This route will be used to update the details of consumer(meternumber,phoneNumber,subsidyRate)
+*/
+adminRouter.put("/updateConsumers", async (req, res) => {
+  try {
+    console.log(req.body)
+    const updatedConsumers = await updateConsumerDetails(req.body.consumerId,req.body.meterNumber,req.body.phoneNumber,req.body.subsidyRate);
+
+    updatedConsumers
+      ? res.status(200).json({
+          success: true,
+          message: "Updated consumer successfully",
+        })
+      : res
+          .status(500)
+          .json({ success: false, message: "consumer Updation failed" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, message: "internal server error" });
