@@ -137,7 +137,9 @@ billingRouter.post("/updateRate", async (req, res) => {
  */
 billingRouter.post("/createBill", async (req, res) => {
   try {
-    const bills: Array<Billing> = [];
+    const bills: Array<
+      Billing & { meterRent: number; subsidyDiscount: number }
+    > = [];
     if (req.body.billReadings.length < 1) {
       return res.status(400).json({});
     }
@@ -182,6 +184,8 @@ billingRouter.post("/createBill", async (req, res) => {
             totalCharge: number;
             breakage: Array<Breakage>;
             fixedCharge: { amount: number; calculation: string };
+            meterRent: number;
+            subsidyDiscount: number;
           } = null;
 
           // Add subsidy percentage
@@ -252,7 +256,11 @@ billingRouter.post("/createBill", async (req, res) => {
           }
 
           await billingCollection.add(bill);
-          bills.push(bill);
+          bills.push({
+            ...bill,
+            subsidyDiscount: calculatedTotalCharge.subsidyDiscount,
+            meterRent: calculatedTotalCharge.meterRent,
+          });
         }
       )
     );

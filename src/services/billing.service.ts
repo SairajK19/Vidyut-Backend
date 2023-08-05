@@ -326,6 +326,8 @@ export const calculateDomesticOrCommercialTotalCharge = async (
   totalCharge: number;
   breakage: Array<Breakage>;
   fixedCharge: { amount: number; calculation: string };
+  subsidyDiscount: number;
+  meterRent: number;
 } | null> => {
   const breakage: Array<Breakage> = [];
   var totalEnergyCharges = 0;
@@ -371,7 +373,7 @@ export const calculateDomesticOrCommercialTotalCharge = async (
     consumer.consumerType == "Commercial" &&
     rateDocData.type == "Commercial"
   ) {
-    const fixedCharge =
+    const fixedChargeRate =
       consumer.sanctionedLoad < 20
         ? rateDocData.fixedChargeRate.find((charge) => charge.range == "0-20")
             .pricePerUnit
@@ -380,39 +382,65 @@ export const calculateDomesticOrCommercialTotalCharge = async (
             .pricePerUnit
         : 0;
 
-    if (fixedCharge == 0) {
+    if (fixedChargeRate == 0) {
       throw new Error(
         `Invalid fixed charge, Sanc Load cannot be more than 90. It is ${consumer.sanctionedLoad}`
       );
     }
 
-    console.log("Fixed Charge", fixedCharge);
+    console.log("Fixed Charge", fixedChargeRate);
+    const meterRent = consumer.phase == 1 ? 15 : 25;
+    const fixedCharge = consumer.sanctionedLoad * fixedChargeRate;
+    console.log(
+      consumer.subsidyRate,
+      totalEnergyCharges,
+      fixedCharge,
+      meterRent,
+      consumer.subsidyRate / 100,
+      totalEnergyCharges + fixedCharge + meterRent,
+      "Billing"
+    );
+    const subsidyDiscount =
+      (consumer.subsidyRate / 100) *
+      (totalEnergyCharges + fixedCharge + meterRent);
 
     return {
       breakage: breakage,
+
       totalCharge:
-        totalEnergyCharges +
-        consumer.sanctionedLoad +
-        fixedCharge -
-        consumer.subsidyRate,
+        totalEnergyCharges + meterRent + fixedCharge - subsidyDiscount,
+
       fixedCharge: {
-        amount: fixedCharge * consumer.sanctionedLoad,
-        calculation: `${fixedCharge} * ${consumer.sanctionedLoad}`,
+        amount: fixedChargeRate * consumer.sanctionedLoad,
+        calculation: `${fixedChargeRate} * ${consumer.sanctionedLoad}`,
       },
+
+      meterRent: meterRent,
+      subsidyDiscount: subsidyDiscount,
     };
   } else if (
     consumer.consumerType == "Domestic" &&
     rateDocData.type == "Domestic"
   ) {
+    const meterRent = consumer.phase == 1 ? 15 : 25;
     const fixedCharge = consumer.sanctionedLoad * rateDocData.fixedChargeRate;
+    const subsidyDiscount =
+      (consumer.subsidyRate / 100) *
+      (totalEnergyCharges + fixedCharge + meterRent);
 
     return {
       breakage: breakage,
-      totalCharge: totalEnergyCharges + fixedCharge - consumer.subsidyRate,
+
+      totalCharge:
+        totalEnergyCharges + fixedCharge + meterRent - subsidyDiscount,
+
       fixedCharge: {
         amount: rateDocData.fixedChargeRate * consumer.sanctionedLoad,
         calculation: `${rateDocData.fixedChargeRate} * ${consumer.sanctionedLoad}`,
       },
+
+      meterRent: meterRent,
+      subsidyDiscount: subsidyDiscount,
     };
   }
 };
@@ -425,6 +453,8 @@ export const calculateIndustrialTotalCharge = async (
   totalCharge: number;
   breakage: Array<Breakage>;
   fixedCharge: { amount: number; calculation: string };
+  subsidyDiscount: number;
+  meterRent: number;
 } | null> => {
   const breakage: Array<Breakage> = [];
   var totalEnergyCharges = 0;
@@ -463,23 +493,25 @@ export const calculateIndustrialTotalCharge = async (
     })
   );
   const fixedCharge = consumer.sanctionedLoad * rateDocData.fixedChargeRate;
+  const meterRent = consumer.phase == 1 ? 15 : 25;
+  const subsidyDiscount =
+    (consumer.subsidyRate / 100) *
+    (totalEnergyCharges + fixedCharge + meterRent);
 
   return {
     breakage: breakage,
-    totalCharge: totalEnergyCharges + fixedCharge - consumer.subsidyRate,
+
+    totalCharge: totalEnergyCharges + fixedCharge + meterRent - subsidyDiscount,
+
     fixedCharge: {
       amount: rateDocData.fixedChargeRate * consumer.sanctionedLoad,
       calculation: `${rateDocData.fixedChargeRate}*${consumer.sanctionedLoad}`,
     },
+
+    meterRent: meterRent,
+    subsidyDiscount: subsidyDiscount,
   };
 };
-
-export const changeRateDocAndUpdateBill = (
-  consumption: number,
-  rateDocData: IndustrialRate,
-  consumer: User,
-  rateDocId: string
-) => {};
 
 export async function updateBillingStatus(billId: string) {
   const updatePaymentStatus = await billingCollection.doc(billId).update({
