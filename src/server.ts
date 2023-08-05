@@ -9,6 +9,7 @@ import { verifyAdmin } from "./middleware/auth";
 import { adminRouter } from "./controller/admin.controller";
 import { consumerRouter } from "./controller/consumer.controller";
 import { authRouter } from "./controller/auth.controller";
+import { billingRouter } from "./controller/billing.controller";
 
 const port = 8080;
 const app = express();
@@ -39,6 +40,7 @@ app.use(
 
 server.listen(port, async () => {
   app.use("/api/admin", verifyAdmin, adminRouter);
+  app.use("/api/billing", verifyAdmin, billingRouter);
   app.use("/api/consumer", consumerRouter);
   app.use("/api/auth", authRouter);
 

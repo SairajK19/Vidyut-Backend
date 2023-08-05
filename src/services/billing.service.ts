@@ -6,11 +6,18 @@ import {
   Breakage,
 } from "custom";
 import {
+  billingCollection,
   commercialRateCollection,
   domesticRateCollection,
   industrialRateCollection,
 } from "./initDb";
-import { CommercialRate, DomesticRate, IndustrialRate, User } from "../models";
+import {
+  Billing,
+  CommercialRate,
+  DomesticRate,
+  IndustrialRate,
+  User,
+} from "../models";
 import { DomesticRangeRates } from "../lib/utils";
 import moment from "moment";
 
@@ -467,3 +474,11 @@ export const changeRateDocAndUpdateBill = (
   consumer: User,
   rateDocId: string
 ) => {};
+
+export async function updateBillingStatus(billId: string) {
+  const updatePaymentStatus = await billingCollection.doc(billId).update({
+    paid: true,
+    paymentDate: moment().format("MM-DD-YYYY").toString(),
+  } as Billing);
+  return updatePaymentStatus;
+}

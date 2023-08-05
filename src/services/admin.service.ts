@@ -60,10 +60,3 @@ export async function updateConsumerDetails(
 
   return updateConsumerDetails;
 }
-
-export async function updateBillingStatus(billId: string) {
-  const updatePaymentStatus = await billingCollection.doc(billId).update({
-    paid: true,
-  });
-  return updatePaymentStatus;
-}
