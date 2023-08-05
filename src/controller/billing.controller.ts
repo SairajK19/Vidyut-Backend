@@ -155,7 +155,9 @@ billingRouter.post("/createBill", async (req, res) => {
           ).data() as User;
 
           if (!consumer) {
-            throw new Error("Invalid consumer Id, consumer not found!");
+            throw new Error(
+              `Invalid consumer Id ${reading.consumerId}, consumer not found!`
+            );
           }
 
           const previousBillDoc = (

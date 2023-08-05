@@ -158,6 +158,7 @@ export const updateDomesticRate = async (rateBody: {
   slabs: Array<ECSlab>;
   fixedChargeRate: number;
   upperLimit: number;
+  validTill: string;
 }) => {
   try {
     if (rateBody.slabs.length != 5) {
@@ -173,6 +174,7 @@ export const updateDomesticRate = async (rateBody: {
       .update({
         fixedChargeRate: rateBody.fixedChargeRate,
         slabs: rateBody.slabs,
+        validTill: rateBody.validTill,
       } as DomesticRate);
 
     if (updatedRate) {
@@ -190,6 +192,7 @@ export const updateIndustrialRate = async (rateBody: {
   slabs: Array<ECSlab | IndustrialSlab>;
   fixedChargeRate: number;
   upperLimit: number;
+  validTill: string;
 }) => {
   try {
     if (rateBody.slabs.length != 2) {
@@ -208,6 +211,7 @@ export const updateIndustrialRate = async (rateBody: {
       .update({
         fixedChargeRate: rateBody.fixedChargeRate,
         slabs: rateBody.slabs,
+        validTill: rateBody.validTill,
       } as IndustrialRate);
 
     if (updatedRate) {
@@ -225,6 +229,7 @@ export const updateCommercialRate = async (rateBody: {
   rateType: "Domestic" | "Commercial" | "Industrial";
   slabs: Array<ECSlab>;
   fixedChargeRate: number | Array<CommercialFCSlab>;
+  validTill: string;
 }) => {
   try {
     if (rateBody.slabs.length != 5) {
@@ -240,6 +245,7 @@ export const updateCommercialRate = async (rateBody: {
       .update({
         fixedChargeRate: rateBody.fixedChargeRate,
         slabs: rateBody.slabs,
+        validTill: rateBody.validTill,
       } as CommercialRate);
 
     if (updatedRate) {
