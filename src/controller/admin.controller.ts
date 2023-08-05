@@ -743,3 +743,36 @@ adminRouter.put("/updateComplaintStatus", async (req, res) => {
     });
   }
 });
+
+adminRouter.get("/currentRates", async (req, res) => {
+  try {
+    const domesticRate = (
+      await domesticRateCollection.where("latest", "==", true).get()
+    ).docs[0];
+
+    const commercialRate = (
+      await commercialRateCollection.where("latest", "==", true).get()
+    ).docs[0];
+
+    const industrialRate = (
+      await industrialRateCollection.where("latest", "==", true).get()
+    ).docs[0];
+
+    res.status(200).json({
+      success: true,
+      message: "Found current rates",
+      rates: {
+        domesticRate: { ...domesticRate.data(), id: domesticRate.id },
+        commercialRate: { ...commercialRate.data(), id: commercialRate.id },
+        industrialRate: { ...industrialRate.data(), id: industrialRate.id },
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Error while getting current rates",
+      error: err.message,
+      success: false,
+    });
+  }
+});
