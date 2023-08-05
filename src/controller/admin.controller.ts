@@ -18,6 +18,7 @@ export const adminRouter = Router();
  * {
  *  consumerId: string
  *  sanctionedLoad: string
+ *  subsidy: number
  * }
  */
 adminRouter.post("/approveConsumer", async (req, res) => {
@@ -43,6 +44,7 @@ adminRouter.post("/approveConsumer", async (req, res) => {
       approved: true,
       status: "Approved",
       sanctionedLoad: Number(req.body.sanctionedLoad),
+      subsidyRate: Number(req.body.subsidy)
     } as User);
 
     approvedConsumer.writeTime
@@ -146,9 +148,10 @@ adminRouter.get("/fetchConsumers", async (_req, res) => {
 /**Request param should contain
  * {
  *  "consumerId": string,
- *  "meterNumber": Number,
+ *  "address": Number,
  *  "phoneNumber":Number,
- *  "subsidyRate":Number
+ *  "subsidyRate":Number,
+ *  "sanctionedLoad": string
  * }
  *
  * This route will be used to update the details of consumer (meternumber, phoneNumber, subsidyRate)
@@ -157,9 +160,10 @@ adminRouter.put("/updateConsumers", async (req, res) => {
   try {
     const updatedConsumers = await updateConsumerDetails(
       req.body.consumerId,
-      req.body.meterNumber,
+      req.body.address,
       req.body.phoneNumber,
-      req.body.subsidyRate
+      req.body.subsidyRate,
+      req.body.sanctionedLoad
     );
 
     updatedConsumers

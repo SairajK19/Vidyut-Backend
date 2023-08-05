@@ -45,17 +45,19 @@ export async function fetchConsumer(): Promise<Array<ConsumerFetchDetails>> {
 
 export async function updateConsumerDetails(
   consumerId: string,
-  meterNumber: number,
+  address: string,
   phoneNumber: number,
-  subsidyRate: number
+  subsidyRate: number,
+  sanctionedLoad: number
 ) {
   console.log(consumerId);
   const updateConsumerDetails = await consumerCollection
     .doc(consumerId)
     .update({
-      meterNumber,
+      address,
       phoneNumber,
       subsidyRate,
+      sanctionedLoad,
     });
 
   return updateConsumerDetails;
