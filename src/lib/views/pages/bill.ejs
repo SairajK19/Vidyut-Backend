@@ -1,0 +1,248 @@
+<html>
+  <head>
+    <!-- <link href="/bill.css" rel="stylesheet" type="text/css" /> -->
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap");
+
+      * {
+        padding: 0px;
+        margin: 0px;
+        box-sizing: border-box;
+      }
+
+      body {
+        border: 4px solid black;
+        margin: 10px;
+        font-family: "Poppins", sans-serif;
+        font-size: medium;
+        color: #5c5c5c;
+        font-weight: 400;
+      }
+
+      .orange {
+        color: #dd6b20;
+      }
+
+      .heading {
+        font-size: large;
+        font-weight: bold;
+      }
+
+      .header {
+        padding: 10px;
+        text-align: center;
+      }
+
+      .greeting {
+        padding: 20px;
+      }
+
+      .consumption__total_cards {
+        display: flex;
+        justify-content: space-evenly;
+        margin-top: 10px;
+      }
+
+      .card {
+        background-color: rgba(221, 107, 32, 0.06);
+        padding: 20px;
+        min-width: 220px;
+        text-align: center;
+        border-radius: 9.284px;
+        font-weight: bolder;
+      }
+
+      .due_date_and_reading__block {
+        margin-top: 10px;
+        padding: 15px 0px;
+      }
+
+      .due_date_and_reading__block {
+        display: flex;
+        justify-content: space-evenly;
+      }
+
+      .due_date_and_reading__block-head {
+        font-weight: 600;
+      }
+
+      .bill_summary {
+        padding: 20px;
+        padding-top: 10px;
+      }
+
+      .bill_summary--table {
+        padding: 0px 30px;
+        margin-top: 10px;
+      }
+
+      .bill_summary--table-head,
+      .bill_summary--table-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        justify-content: space-between;
+        text-align: center;
+      }
+
+      .bill_summary--table-head {
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: rgba(221, 107, 32, 0.06);
+        font-weight: 600;
+      }
+
+      .bill_summary--table-row {
+        margin-top: 5px;
+      }
+
+      .divider {
+        margin: 10px 0;
+      }
+
+      #charges {
+        grid-column: 1/3;
+        text-align: start;
+      }
+
+      .start {
+        text-align: start;
+        padding-left: 25px;
+      }
+
+      .total {
+        padding: 10px;
+        background-color: rgba(221, 107, 32, 0.06);
+        margin-top: 10px;
+      }
+
+      .small {
+        font-size: 11px;
+      }
+
+      #address {
+        max-width: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Logo Header -->
+    <div class="header">
+      <img src="https://0x0.st/H_XR.png" width="auto" height="60px" />
+    </div>
+    <hr />
+    <!-- Greeting -->
+    <div class="greeting">
+      <p>
+        Hello, <span class="orange heading"><%= consumerData.fullName %></span>
+      </p>
+      <p>
+        This is you electricity bill for
+        <span class="orange"><%= bill.currentDate %></span>. Please find the
+        bill summary and breakage below.
+      </p>
+    </div>
+    <!-- Consumption and Total Cards -->
+    <div class="consumption__total_cards">
+      <div class="card">
+        <h1 class="orange"><%= bill.consumption %>kWh</h1>
+        <p>Consumption</p>
+      </div>
+      <div class="card">
+        <h1 class="orange">₹<%= bill.totalCharge %></h1>
+        <p>Bill Amount</p>
+      </div>
+    </div>
+
+    <!-- Due date and readings -->
+    <div class="due_date_and_reading__block">
+      <div>
+        <p class="due_date_and_reading__block-head">Due date</p>
+        <p><%= bill.currentDate %></p>
+      </div>
+      <div>
+        <p class="due_date_and_reading__block-head">Previous Reading</p>
+        <p><%= bill.previousReading %></p>
+      </div>
+      <div>
+        <p class="due_date_and_reading__block-head">Current Reading</p>
+        <p><%= bill.currentReading %></p>
+      </div>
+      <div>
+        <p class="due_date_and_reading__block-head">Sanc. Load</p>
+        <p><%= bill.sanctionedLoad %>kW</p>
+      </div>
+    </div>
+    <!-- Bill Summary Table -->
+    <div class="bill_summary">
+      <p>Your <span class="orange heading">Bill Summary</span></p>
+      <div class="bill_summary--table">
+        <div class="bill_summary--table-head">
+          <p>Quantity</p>
+          <p>Rate</p>
+          <p>Amount</p>
+        </div>
+        <% for (var i=0; i < bill.breakage.length; i++) { %>
+        <div class="bill_summary--table-row">
+          <p><%= bill.breakage[i].quantity %></p>
+          <p>₹<%= bill.breakage[i].rate %></p>
+          <p>₹<%= bill.breakage[i].amount %></p>
+        </div>
+        <% }%>
+        <hr class="divider" />
+        <div class="bill_summary--table-row">
+          <p class="start" id="charges">Total Energy Charges</p>
+          <p class="orange">₹<%= bill.totalEC %></p>
+        </div>
+        <div class="bill_summary--table-row">
+          <p class="start">
+            Fixed Charges<span class="small"> [Sanc. load]</span>
+          </p>
+          <p>₹<%= bill.fixedCharge.calculation %></p>
+          <p>₹<%= bill.fixedCharge.amount %></p>
+        </div>
+        <div class="bill_summary--table-row">
+          <p class="start">Meter Rent</p>
+          <% if (consumerData.phase==1) { %>
+          <p>₹15</p>
+          <% } else { %>
+          <p>₹25</p>
+          <% }%>
+          <p>₹<%= bill.meterRent %></p>
+          <p></p>
+        </div>
+
+        <hr class="divider" />
+        <div class="bill_summary--table-row">
+          <p class="start" id="charges">Total Charges</p>
+          <p class="orange">₹<%= bill.totalEC + bill.fixedCharge.amount + bill.meterRent %></p>
+        </div>
+        <div class="bill_summary--table-row">
+          <p class="start">Subsidy</p>
+          <p><%= consumerData.subsidyRate%>%</p>
+          <p>-₹<%= bill.subsidyDiscount%></p>
+        </div>
+        <div class="bill_summary--table-row total">
+          <p class="start" id="charges">Total Charges</p>
+          <p class="orange">₹<%= bill.totalCharge %></p>
+        </div>
+      </div>
+    </div>
+    <!-- Billed To -->
+    <div class="greeting">
+      <p>Billed To,</p>
+      <p>
+        <span class="orange"><%= consumerData.fullName %></span>
+      </p>
+      <p id="address"><%= consumerData.address %></p>
+    </div>
+
+    <!-- Thankyou -->
+    <div class="greeting">
+      <p>Thank you</p>
+      <p>Regards</p>
+      <p>
+        <span class="orange">Vidyut</span>
+      </p>
+    </div>
+  </body>
+</html>

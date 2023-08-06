@@ -29,6 +29,10 @@ import {
 import { billingCollection } from "../services/initDb";
 import { User } from "../models";
 import { updateBillingStatus } from "../services/billing.service";
+import path from "path";
+import ejs from "ejs";
+import HTMLToPDF from "convert-html-to-pdf";
+import { createPDFAndMail } from "../lib/utils";
 
 export const billingRouter = Router();
 
@@ -164,7 +168,7 @@ billingRouter.post("/createBill", async (req, res) => {
 
           const previousBillDoc = (
             await billingCollection
-              .where("consumerId", "==", reading.consumerId)
+              .where("consumerDocId", "==", reading.consumerId)
               .where("latest", "==", true)
               .get()
           ).docs[0];
@@ -172,6 +176,7 @@ billingRouter.post("/createBill", async (req, res) => {
           const previousBill = previousBillDoc
             ? (previousBillDoc.data() as Billing)
             : null;
+          console.log(previousBill, "PREVIOUS");
           const rateDoc = await getRateDoc(consumer.consumerType);
 
           if (previousBill) {
@@ -221,6 +226,11 @@ billingRouter.post("/createBill", async (req, res) => {
               break;
           }
 
+          var totalEC = 0;
+          calculatedTotalCharge.breakage.map((slab) => {
+            totalEC += slab.amount;
+          });
+
           const bill: Billing = {
             paid: false,
             latest: true,
@@ -237,9 +247,10 @@ billingRouter.post("/createBill", async (req, res) => {
             fixedCharge: calculatedTotalCharge.fixedCharge,
             meterRent: consumer.phase == 1 ? 15 : 25,
             previousReading: previousBill ? previousBill.currentReading : 0,
-            totalCharge: calculatedTotalCharge.totalCharge,
+            totalCharge: Math.round(calculatedTotalCharge.totalCharge),
             breakage: calculatedTotalCharge.breakage,
             consumerType: consumer.consumerType,
+            totalEC: Math.round(totalEC),
           };
 
           const oldBill = (
@@ -258,9 +269,14 @@ billingRouter.post("/createBill", async (req, res) => {
           await billingCollection.add(bill);
           bills.push({
             ...bill,
-            subsidyDiscount: calculatedTotalCharge.subsidyDiscount,
+            subsidyDiscount: Math.round(calculatedTotalCharge.subsidyDiscount),
             meterRent: calculatedTotalCharge.meterRent,
           });
+
+          createPDFAndMail(
+            { ...bill, subsidyDiscount: Math.round(calculatedTotalCharge.subsidyDiscount) },
+            consumer
+          );
         }
       )
     );

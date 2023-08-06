@@ -10,6 +10,7 @@ import { adminRouter } from "./controller/admin.controller";
 import { consumerRouter } from "./controller/consumer.controller";
 import { authRouter } from "./controller/auth.controller";
 import { billingRouter } from "./controller/billing.controller";
+import path from "path";
 
 const port = 8080;
 const app = express();
@@ -37,6 +38,9 @@ app.use(
     cookie: { maxAge: 1000 * 60 * 60 * 24, httpOnly: true },
   })
 );
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use(express.static(__dirname + "/public"));
 
 server.listen(port, async () => {
   app.use("/api/admin", verifyAdmin, adminRouter);

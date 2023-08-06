@@ -1,4 +1,3 @@
-import { ConsumerType } from "custom";
 import { User } from "../models";
 import { Complaint } from "../models";
 import { complaintCollection, consumerCollection } from "./initDb";

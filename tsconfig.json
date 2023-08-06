@@ -10,7 +10,8 @@
     "baseUrl": ".",
     "paths": {
       "*": ["node_modules/*", "src/@custom_types/*"]
-    }
+    },
+    "types": ["node"]
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*"],
 }

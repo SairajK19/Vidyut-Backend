@@ -49,6 +49,7 @@ export type Billing = {
   paid: boolean;
   rateDocId: string;
   latest: boolean;
+  totalEC: number;
 };
 
 export type DomesticRate = {

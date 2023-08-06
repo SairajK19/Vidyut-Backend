@@ -411,7 +411,7 @@ export const calculateDomesticOrCommercialTotalCharge = async (
         totalEnergyCharges + meterRent + fixedCharge - subsidyDiscount,
 
       fixedCharge: {
-        amount: fixedChargeRate * consumer.sanctionedLoad,
+        amount: Math.round(fixedChargeRate * consumer.sanctionedLoad),
         calculation: `${fixedChargeRate} * ${consumer.sanctionedLoad}`,
       },
 
@@ -435,7 +435,7 @@ export const calculateDomesticOrCommercialTotalCharge = async (
         totalEnergyCharges + fixedCharge + meterRent - subsidyDiscount,
 
       fixedCharge: {
-        amount: rateDocData.fixedChargeRate * consumer.sanctionedLoad,
+        amount: Math.round(rateDocData.fixedChargeRate * consumer.sanctionedLoad),
         calculation: `${rateDocData.fixedChargeRate} * ${consumer.sanctionedLoad}`,
       },
 
@@ -481,7 +481,7 @@ export const calculateIndustrialTotalCharge = async (
           rateDocData.slabs.find((slab) => slab.range == "0-500").pricePerUnit;
 
         breakage.push({
-          amount: amount,
+          amount: Math.round(amount),
           quantity: consumption,
           rate: rateDocData.slabs.find((slab) => slab.range == "0-500")
             .pricePerUnit,
@@ -504,7 +504,7 @@ export const calculateIndustrialTotalCharge = async (
     totalCharge: totalEnergyCharges + fixedCharge + meterRent - subsidyDiscount,
 
     fixedCharge: {
-      amount: rateDocData.fixedChargeRate * consumer.sanctionedLoad,
+      amount: Math.round(rateDocData.fixedChargeRate * consumer.sanctionedLoad),
       calculation: `${rateDocData.fixedChargeRate}*${consumer.sanctionedLoad}`,
     },
 
