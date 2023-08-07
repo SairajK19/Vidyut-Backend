@@ -228,3 +228,20 @@ consumerRouter.post("/verify-otp", async (req, res) => {
     });
   }
 });
+
+consumerRouter.get("/bill", async (req, res) => {
+  try {
+    const bills = await billingCollection.get();
+
+    return res
+      .status(200)
+      .json({ message: "Bill found", success: true, bills: bills });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Internal error, failed to bills",
+      error: err,
+      success: false,
+    });
+  }
+});
