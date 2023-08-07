@@ -7,6 +7,7 @@ export const DomesticRateCollectionName = "DomesticRates";
 export const IndustrialRateCollectionName = "IndustrialRates";
 export const CommercialRateCollectionName = "CommercialRates";
 export const ComplaintCollectionName = "ComplaintCollection";
+export const OTPCollectionName = "OTP";
 
 export const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",

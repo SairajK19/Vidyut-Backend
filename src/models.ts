@@ -38,6 +38,7 @@ export type Billing = {
   sanctionedLoad: number;
   meterNumber: number;
   currentDate: string;
+  dueDate: string;
   currentReading: number;
   paymentDate: string;
   previousReading: number;
@@ -84,4 +85,9 @@ export type Complaint = {
   status: "Resolved" | "Rejected" | "Pending";
   billDocId: string;
   consumerDocId: string;
+};
+
+export type OTP = {
+  consumerId: string;
+  otp: number;
 };

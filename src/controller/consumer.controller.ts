@@ -1,5 +1,5 @@
 import { Router, response } from "express";
-import { Billing, User } from "../models";
+import { Billing, OTP, User } from "../models";
 import {
   createComplaint,
   createConsumer,
@@ -7,7 +7,14 @@ import {
   userAlreadyExist,
 } from "../services/consumer.service";
 import { Complaint } from "../models";
-import { billingCollection, consumerCollection } from "../services/initDb";
+import {
+  billingCollection,
+  consumerCollection,
+  otpCollection,
+} from "../services/initDb";
+import ejs from "ejs";
+import path from "path";
+import { transporter } from "../lib/commons";
 
 export const consumerRouter = Router();
 
@@ -21,7 +28,7 @@ export const consumerRouter = Router();
  *  phase: 1 | 3,
  *  supportingDocs: Array<string>
  * }
-*/
+ */
 consumerRouter.post("/createConsumer", async (req, res) => {
   try {
     if (
@@ -126,6 +133,96 @@ consumerRouter.get("/consumerBillDetails/:consumerDocId", async (req, res) => {
     console.log(err);
     return res.status(500).json({
       message: "internal error, failed to get consumer bill details",
+      error: err,
+      success: false,
+    });
+  }
+});
+
+consumerRouter.get("/otp/:consumerId", async (req, res) => {
+  try {
+    const consumerId = req.params.consumerId;
+    const otp = Math.floor(1000 + Math.random() * 9000);
+    const consumer = await consumerCollection.doc(consumerId).get();
+
+    if (!consumer.data()) {
+      return res
+        .status(404)
+        .json({ message: "Consumer not found", success: false });
+    }
+    ejs.renderFile(
+      path.join(__dirname, "../lib/views/pages/otp.ejs"),
+      { consumerData: { ...consumer.data(), otp: otp } },
+      async (err, mail) => {
+        var mainOptions = {
+          from: '"EBS" noreply.ebsos@gmail.com',
+          to: consumer.data().email,
+          subject: "Vidyut: Complaint OTP",
+          html: mail,
+        };
+
+        if (err) {
+          throw new Error("Error while sending mail");
+        }
+
+        transporter.sendMail(
+          mainOptions,
+          function (err: any, info: { response: string }) {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log(
+                `Message sent to ${consumer.data().email}: ` + info.response
+              );
+            }
+          }
+        );
+      }
+    );
+
+    await otpCollection.add({ consumerId: consumer.id, otp } as OTP);
+    // res.render("otp.ejs", { consumerData: { ...consumer.data(), otp: otp } });
+    return res
+      .status(200)
+      .json({ success: true, message: `OTP sent to ${consumer.data().email}` });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "internal error, failed to get consumer bill details",
+      error: err,
+      success: false,
+    });
+  }
+});
+
+/**
+ * {
+ *  consumerId: string,
+ *  otp: number
+ * }
+ */
+consumerRouter.post("/verify-otp", async (req, res) => {
+  try {
+    const consumerId = req.body.consumerId;
+    const otp = (
+      await otpCollection.where("consumerId", "==", consumerId).get()
+    ).docs[0];
+
+    if (otp.data().otp == Number(req.body.otp)) {
+      await otpCollection.doc(otp.id).delete();
+      return res
+        .status(200)
+        .json({ message: "OTP Verified successfully", success: true });
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: "OTP Verification failed, invalid OTP",
+      });
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Internal error, failed to verify otp",
       error: err,
       success: false,
     });

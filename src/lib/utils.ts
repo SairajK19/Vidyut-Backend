@@ -28,7 +28,8 @@ export const enum IndustrialRangeRate {
 
 export const createPDFAndMail = (
   bill: Billing & { subsidyDiscount: number },
-  consumer: User
+  consumer: User,
+  billId: string
 ) => {
   console.log(path.join(__dirname, "views/pages/bill.ejs"));
   ejs.renderFile(
@@ -37,7 +38,7 @@ export const createPDFAndMail = (
     async (err, billData) => {
       ejs.renderFile(
         path.join(__dirname, "views/pages/mail.ejs"),
-        { bill: bill, consumerData: consumer },
+        { bill: bill, consumerData: consumer, billId },
         async (err, mail) => {
           const htmlToPdf = new HTMLToPDF(billData);
           const billPdf = await htmlToPdf.convert();

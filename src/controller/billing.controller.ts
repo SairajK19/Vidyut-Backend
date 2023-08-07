@@ -144,6 +144,7 @@ billingRouter.post("/createBill", async (req, res) => {
     const bills: Array<
       Billing & { meterRent: number; subsidyDiscount: number }
     > = [];
+    const failedBills: Array<{ reason: string; consumerId: string }> = [];
     if (req.body.billReadings.length < 1) {
       return res.status(400).json({});
     }
@@ -155,15 +156,38 @@ billingRouter.post("/createBill", async (req, res) => {
           meterNumber: number;
           currentReading: number;
           dateOfReading: string;
+          dueDate: string;
         }) => {
           const consumer = (
             await consumerCollection.doc(reading.consumerId).get()
           ).data() as User;
 
           if (!consumer) {
-            throw new Error(
+            console.log(
               `Invalid consumer Id ${reading.consumerId}, consumer not found!`
             );
+            failedBills.push({
+              consumerId: reading.consumerId,
+              reason: "Consumer not found",
+            });
+
+            return;
+          } else if (consumer.meterNumber != reading.meterNumber) {
+            console.log(`Invalid meter number ${reading.meterNumber}!`);
+            failedBills.push({
+              consumerId: reading.consumerId,
+              reason: "Meter number not corresponding to the consumer",
+            });
+
+            return;
+          } else if (!consumer.approved) {
+            console.log(`Consumer ${consumer.fullName} not yet approved`);
+            failedBills.push({
+              consumerId: reading.consumerId,
+              reason: "Consumer not yet approved",
+            });
+
+            return;
           }
 
           const previousBillDoc = (
@@ -183,6 +207,19 @@ billingRouter.post("/createBill", async (req, res) => {
             await billingCollection
               .doc(previousBillDoc.id)
               .update({ latest: false });
+
+            if (
+              Number(reading.currentReading) <
+              Number(previousBill.currentReading)
+            ) {
+              console.log("Previous reading is less than current reading");
+              failedBills.push({
+                consumerId: reading.consumerId,
+                reason: `Previous reading is greater than current reading. Previous reading = ${previousBill.currentReading}, Current reading = ${reading.currentReading}`,
+              });
+
+              return;
+            }
           }
 
           var calculatedTotalCharge: {
@@ -251,6 +288,7 @@ billingRouter.post("/createBill", async (req, res) => {
             breakage: calculatedTotalCharge.breakage,
             consumerType: consumer.consumerType,
             totalEC: Math.round(totalEC),
+            dueDate: reading.dueDate,
           };
 
           const oldBill = (
@@ -266,7 +304,7 @@ billingRouter.post("/createBill", async (req, res) => {
               .update({ latest: false } as Billing);
           }
 
-          await billingCollection.add(bill);
+          const createdBill = await billingCollection.add(bill);
           bills.push({
             ...bill,
             subsidyDiscount: Math.round(calculatedTotalCharge.subsidyDiscount),
@@ -274,16 +312,25 @@ billingRouter.post("/createBill", async (req, res) => {
           });
 
           createPDFAndMail(
-            { ...bill, subsidyDiscount: Math.round(calculatedTotalCharge.subsidyDiscount) },
-            consumer
+            {
+              ...bill,
+              subsidyDiscount: Math.round(
+                calculatedTotalCharge.subsidyDiscount
+              ),
+            },
+            consumer,
+            createdBill.id
           );
         }
       )
     );
 
-    res
-      .status(200)
-      .json({ addedBills: bills, success: true, createdBills: bills.length });
+    res.status(200).json({
+      addedBills: bills,
+      failedBills,
+      success: true,
+      createdBills: bills.length,
+    });
   } catch (err) {
     console.log(err);
     return res.status(500).json({

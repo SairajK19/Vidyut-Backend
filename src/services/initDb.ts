@@ -7,6 +7,7 @@ import {
   DomesticRateCollectionName,
   IndustrialRateCollectionName,
   ConsumerCollectionName,
+  OTPCollectionName,
 } from "../lib/commons";
 import { User } from "../models";
 const credentials = require("../../credentials.json");
@@ -27,3 +28,4 @@ export const commercialRateCollection = db.collection(
   CommercialRateCollectionName
 );
 export const complaintCollection = db.collection(ComplaintCollectionName);
+export const otpCollection = db.collection(OTPCollectionName);
