@@ -281,8 +281,14 @@ consumerRouter.get("/render-bill/:billId", async (req, res) => {
       return res.status(404).send("404 Bill not found");
     }
 
+    const subsidyDiscount =
+      (consumer.data().subsidyRate / 100) *
+      (bill.data().totalEC +
+        bill.data().fixedCharge.amount +
+        bill.data().meterRent);
+
     res.render("../lib/views/pages/bill.ejs", {
-      bill: bill.data(),
+      bill: { ...bill.data(), subsidyDiscount },
       consumerData: consumer.data(),
     });
   } catch (err) {

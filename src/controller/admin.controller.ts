@@ -299,6 +299,12 @@ adminRouter.get("/complaint-details/:complaintId", async (req, res) => {
   }
 });
 
+/**
+ * {
+ *  complaintId: string,
+ *  status: "Rejected" | "Resolved"
+ * }
+ */
 adminRouter.put("/updateComplaintStatus", async (req, res) => {
   try {
     const complaintId = req.body.complaintId;

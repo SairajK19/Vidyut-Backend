@@ -319,7 +319,8 @@ billingRouter.post("/createBill", async (req, res) => {
               ),
             },
             consumer,
-            createdBill.id
+            createdBill.id,
+            false
           );
         }
       )
@@ -365,6 +366,8 @@ billingRouter.post("/billCorrectionMeterReading", async (req, res) => {
       totalCharge: number;
       breakage: Array<Breakage>;
       fixedCharge: { amount: number; calculation: string };
+      subsidyDiscount: number;
+      totalEC: number;
     } = null;
 
     switch (currentBillData.consumerType) {
@@ -398,7 +401,22 @@ billingRouter.post("/billCorrectionMeterReading", async (req, res) => {
         Number(req.body.newReading) - currentBillData.previousReading,
       breakage: calculatedTotalCharge.breakage,
       totalCharge: calculatedTotalCharge.totalCharge,
+      totalEC: calculatedTotalCharge.totalEC,
     } as Billing);
+
+    const bill = (
+      await billingCollection.doc(req.body.billId).get()
+    ).data() as Billing;
+
+    createPDFAndMail(
+      {
+        ...bill,
+        subsidyDiscount: calculatedTotalCharge.subsidyDiscount,
+      },
+      consumer.data() as User,
+      req.body.billId,
+      true
+    );
 
     updatedBill
       ? res.status(200).json({
@@ -446,6 +464,7 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
       totalCharge: number;
       breakage: Array<Breakage>;
       fixedCharge: { amount: number; calculation: string };
+      subsidyDiscount: number;
     } = null;
     var rateDoc = null;
 
@@ -460,7 +479,6 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
           currentBillData.rateDocId
         );
 
-        console.log(currentBillData.consumption, "CONSUMPTION");
         calculatedTotalCharge = await calculateDomesticOrCommercialTotalCharge(
           currentBillData.consumption,
           rateDoc.data() as DomesticRate,
@@ -510,6 +528,20 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
         totalCharge: calculatedTotalCharge.totalCharge,
       } as Billing);
 
+    const bill = (
+      await billingCollection.doc(req.body.billId).get()
+    ).data() as Billing;
+
+    createPDFAndMail(
+      {
+        ...bill,
+        subsidyDiscount: calculatedTotalCharge.subsidyDiscount,
+      },
+      consumer.data() as User,
+      req.body.billId,
+      true
+    );
+
     updatedBill
       ? res.status(200).json({
           success: true,
@@ -556,7 +588,7 @@ billingRouter.put("/updatePaymentStatus", async (req, res) => {
 
 billingRouter.get("/currentRates", async (req, res) => {
   try {
-    const domesticRate = (
+    var domesticRate = (
       await domesticRateCollection.where("latest", "==", true).get()
     ).docs[0];
 

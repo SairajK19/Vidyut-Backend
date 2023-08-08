@@ -328,6 +328,7 @@ export const calculateDomesticOrCommercialTotalCharge = async (
   fixedCharge: { amount: number; calculation: string };
   subsidyDiscount: number;
   meterRent: number;
+  totalEC: number;
 } | null> => {
   const breakage: Array<Breakage> = [];
   var totalEnergyCharges = 0;
@@ -417,6 +418,7 @@ export const calculateDomesticOrCommercialTotalCharge = async (
 
       meterRent: meterRent,
       subsidyDiscount: subsidyDiscount,
+      totalEC: totalEnergyCharges,
     };
   } else if (
     consumer.consumerType == "Domestic" &&
@@ -435,12 +437,15 @@ export const calculateDomesticOrCommercialTotalCharge = async (
         totalEnergyCharges + fixedCharge + meterRent - subsidyDiscount,
 
       fixedCharge: {
-        amount: Math.round(rateDocData.fixedChargeRate * consumer.sanctionedLoad),
+        amount: Math.round(
+          rateDocData.fixedChargeRate * consumer.sanctionedLoad
+        ),
         calculation: `${rateDocData.fixedChargeRate} * ${consumer.sanctionedLoad}`,
       },
 
       meterRent: meterRent,
       subsidyDiscount: subsidyDiscount,
+      totalEC: totalEnergyCharges,
     };
   }
 };
@@ -455,6 +460,7 @@ export const calculateIndustrialTotalCharge = async (
   fixedCharge: { amount: number; calculation: string };
   subsidyDiscount: number;
   meterRent: number;
+  totalEC: number;
 } | null> => {
   const breakage: Array<Breakage> = [];
   var totalEnergyCharges = 0;
@@ -510,6 +516,7 @@ export const calculateIndustrialTotalCharge = async (
 
     meterRent: meterRent,
     subsidyDiscount: subsidyDiscount,
+    totalEC: totalEnergyCharges,
   };
 };
 

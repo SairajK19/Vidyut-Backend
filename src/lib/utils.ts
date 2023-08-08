@@ -29,15 +29,19 @@ export const enum IndustrialRangeRate {
 export const createPDFAndMail = (
   bill: Billing & { subsidyDiscount: number },
   consumer: User,
-  billId: string
+  billId: string,
+  updateBill: boolean
 ) => {
-  console.log(path.join(__dirname, "views/pages/bill.ejs"));
+  // console.log(path.join(__dirname, "views/pages/bill.ejs"));
   ejs.renderFile(
     path.join(__dirname, "views/pages/bill.ejs"),
     { bill: bill, consumerData: consumer },
     async (err, billData) => {
       ejs.renderFile(
-        path.join(__dirname, "views/pages/mail.ejs"),
+        path.join(
+          __dirname,
+          `views/pages/${!updateBill ? "mail.ejs" : "bill_update_mail.ejs"}`
+        ),
         { bill: bill, consumerData: consumer, billId },
         async (err, mail) => {
           const htmlToPdf = new HTMLToPDF(billData);
