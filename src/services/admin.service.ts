@@ -7,19 +7,29 @@ import { Complaint, User, UserApplicationStatus } from "../models";
 import { ConsumerFetchDetails } from "custom";
 
 export async function fetchComplaints(): Promise<Array<Complaint>> {
-  const complaintSnapshot = await complaintCollection.get();
-  const complaints: Array<Complaint> = [];
-  console.log(`Total Complaints: ${complaintSnapshot.size}`);
+  const complaintSnapshot = (await complaintCollection.get()).docs;
+  const complaints: Array<
+    Complaint & { complaintId: string; consumerName: string }
+  > = [];
+  console.log(`Total Complaints: ${complaintSnapshot.length}`);
 
-  complaintSnapshot.forEach((cmptDoc) => {
-    const complaintData = cmptDoc.data() as Complaint;
-    complaints.push({
-      description: complaintData.description,
-      status: complaintData.status,
-      billDocId: complaintData.billDocId,
-      consumerDocId: complaintData.consumerDocId,
-    });
-  });
+  await Promise.all(
+    complaintSnapshot.map(async (cmptDoc) => {
+      const complaintData = cmptDoc.data() as Complaint;
+      const consumer = (
+        await consumerCollection.doc(complaintData.consumerDocId).get()
+      ).data() as User;
+      complaints.push({
+        description: complaintData.description,
+        status: complaintData.status,
+        billDocId: complaintData.billDocId,
+        consumerDocId: complaintData.consumerDocId,
+        complaintType: complaintData.complaintType,
+        complaintId: cmptDoc.id,
+        consumerName: consumer.fullName,
+      });
+    })
+  );
   return complaints;
 }
 

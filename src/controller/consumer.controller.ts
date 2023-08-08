@@ -74,18 +74,46 @@ consumerRouter.post("/createConsumer", async (req, res) => {
 
 /**
  * {
- *  consumerDocId: string
+ *  consumerDocId: string,
+ *  billDocId: string,
+ *  description: string,
+ *  complaintType: "meterReading" | "slabRate"
  * }
  */
 consumerRouter.post("/createComplaint", async (req, res) => {
   try {
-    if (
-      (await consumerCollection.doc(req.body.consumerDocId).get()).data() ==
-      null
-    ) {
+    const consumer = await consumerCollection.doc(req.body.consumerDocId).get();
+    if (!consumer.data()) {
       return res
         .status(403)
         .json({ success: false, message: "comsumer doesnt exists" });
+    }
+
+    const bill = await billingCollection.doc(req.body.billDocId).get();
+
+    if (!bill.data()) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Bill not found" });
+    } else if (bill.data().consumerDocId !== consumer.id) {
+      return res
+        .status(401)
+        .json({ success: false, message: `Bill not owned by ${consumer.id}` });
+    }
+
+    var complaintType: "meterReading" | "slabRate" | null = null;
+    switch (req.body.complaintType as "meterReading" | "slabRate") {
+      case "meterReading":
+        complaintType = "meterReading";
+        break;
+      case "slabRate":
+        complaintType = "slabRate";
+        break;
+      default:
+        return res.status(401).json({
+          success: false,
+          message: `Invalid complaint type ${req.body.complaintType}`,
+        });
     }
 
     const complaint: Complaint = {
@@ -93,6 +121,7 @@ consumerRouter.post("/createComplaint", async (req, res) => {
       status: "Pending",
       billDocId: req.body.billDocId,
       consumerDocId: req.body.consumerDocId,
+      complaintType: complaintType,
     };
 
     const createdComplaint: string = await createComplaint(complaint);
@@ -144,6 +173,15 @@ consumerRouter.get("/otp/:consumerId", async (req, res) => {
     const consumerId = req.params.consumerId;
     const otp = Math.floor(1000 + Math.random() * 9000);
     const consumer = await consumerCollection.doc(consumerId).get();
+    const oldOtps = await otpCollection
+      .where("consumerId", "==", consumer.id)
+      .get();
+
+    await Promise.all(
+      oldOtps.docs.map((oldOtp) => {
+        otpCollection.doc(oldOtp.id).delete();
+      })
+    );
 
     if (!consumer.data()) {
       return res

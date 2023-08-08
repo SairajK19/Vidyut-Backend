@@ -505,7 +505,6 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
       .doc(compliant.billDocId)
       .update({
         ...currentBillData,
-        currentReading: Number(req.body.newReading),
         consumption: currentBillData.consumption,
         breakage: calculatedTotalCharge.breakage,
         totalCharge: calculatedTotalCharge.totalCharge,

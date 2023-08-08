@@ -85,6 +85,7 @@ export type Complaint = {
   status: "Resolved" | "Rejected" | "Pending";
   billDocId: string;
   consumerDocId: string;
+  complaintType: "meterReading" | "slabRate";
 };
 
 export type OTP = {

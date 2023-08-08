@@ -1,12 +1,19 @@
 import { Router } from "express";
 import { Complaint, User } from "../models";
-import { complaintCollection, consumerCollection } from "../services/initDb";
+import {
+  billingCollection,
+  commercialRateCollection,
+  complaintCollection,
+  consumerCollection,
+  domesticRateCollection,
+  industrialRateCollection,
+} from "../services/initDb";
 import {
   fetchComplaints,
   fetchConsumer,
   updateConsumerDetails,
 } from "../services/admin.service";
-import { ConsumerFetchDetails } from "custom";
+import { ConsumerFetchDetails, ConsumerType } from "custom";
 
 export const adminRouter = Router();
 
@@ -44,7 +51,7 @@ adminRouter.post("/approveConsumer", async (req, res) => {
       approved: true,
       status: "Approved",
       sanctionedLoad: Number(req.body.sanctionedLoad),
-      subsidyRate: Number(req.body.subsidy)
+      subsidyRate: Number(req.body.subsidy),
     } as User);
 
     approvedConsumer.writeTime
@@ -225,11 +232,67 @@ adminRouter.get("/fetchComplaints", async (_req, res) => {
       ? res.status(200).json({
           success: true,
           message: "fetched complaints successfully",
-          fetchComplaints: fetchedComplaints,
+          complaints: fetchedComplaints,
         })
       : res
           .status(500)
           .json({ success: false, message: "complaint fetching failed" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, message: "internal server error" });
+  }
+});
+
+/**
+ * {
+ *  complaintId: string
+ * }
+ */
+adminRouter.get("/complaint-details/:complaintId", async (req, res) => {
+  try {
+    const complaint = await complaintCollection
+      .doc(req.params.complaintId)
+      .get();
+
+    if (!complaint.data()) {
+      console.log("Complaint not found");
+      return res
+        .status(404)
+        .json({ message: "Complaint not found", success: false });
+    }
+
+    const bill = await billingCollection.doc(complaint.data().billDocId).get();
+    var rateDoc = null;
+    switch (bill.data().consumerType as ConsumerType) {
+      case "Commercial":
+        rateDoc = await commercialRateCollection
+          .doc(bill.data().rateDocId)
+          .get();
+        break;
+      case "Domestic":
+        rateDoc = await domesticRateCollection.doc(bill.data().rateDocId).get();
+        break;
+      case "Industrial":
+        rateDoc = await industrialRateCollection
+          .doc(bill.data().rateDocId)
+          .get();
+        break;
+    }
+
+    const consumer = await consumerCollection
+      .doc(bill.data().consumerDocId)
+      .get();
+
+    return res.json({
+      success: true,
+      message: "Complaint found",
+      complaint: {
+        complaint: complaint.data(),
+        ...bill.data(),
+        rateDoc: rateDoc.data(),
+        ...consumer.data(),
+      },
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, message: "internal server error" });
