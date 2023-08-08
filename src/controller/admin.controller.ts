@@ -262,6 +262,13 @@ adminRouter.get("/complaint-details/:complaintId", async (req, res) => {
     }
 
     const bill = await billingCollection.doc(complaint.data().billDocId).get();
+
+    if (!bill.data()) {
+      console.log("Bill not found");
+      return res
+        .status(404)
+        .json({ message: "Bill not found", success: false });
+    }
     var rateDoc = null;
     switch (bill.data().consumerType as ConsumerType) {
       case "Commercial":
