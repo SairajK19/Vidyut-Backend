@@ -153,7 +153,7 @@ consumerRouter.get("/otp/:consumerId", async (req, res) => {
     ejs.renderFile(
       path.join(__dirname, "../lib/views/pages/otp.ejs"),
       { consumerData: { ...consumer.data(), otp: otp } },
-      async (err, mail) => {
+      async (err: any, mail: any) => {
         var mainOptions = {
           from: '"EBS" noreply.ebsos@gmail.com',
           to: consumer.data().email,
