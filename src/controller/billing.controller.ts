@@ -540,7 +540,7 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
         subsidyDiscount: calculatedTotalCharge.subsidyDiscount,
       },
       consumer.data() as User,
-      req.body.billId,
+      compliant.billDocId,
       true
     );
 
@@ -590,25 +590,120 @@ billingRouter.put("/updatePaymentStatus", async (req, res) => {
 
 billingRouter.get("/currentRates", async (req, res) => {
   try {
-    var domesticRate = (
+    var domesticRate:
+      | (DomesticRate & { id: string })
+      | FirebaseFirestore.DocumentData = (
       await domesticRateCollection.where("latest", "==", true).get()
     ).docs[0];
 
-    const commercialRate = (
+    if (!domesticRate) {
+      domesticRate = {
+        fixedChargeRate: 0,
+        id: "Domestic No Rate",
+        slabs: [
+          {
+            pricePerUnit: 0,
+            range: "0-100",
+          },
+          {
+            pricePerUnit: 0,
+            range: "101-200",
+          },
+          {
+            pricePerUnit: 0,
+            range: "201-300",
+          },
+          {
+            pricePerUnit: 0,
+            range: "301-400",
+          },
+          {
+            pricePerUnit: 0,
+            range: ">400",
+          },
+        ],
+        validFrom: null,
+        validTill: null,
+        type: "Domestic",
+      } as DomesticRate & { id: string };
+    } else {
+      domesticRate = { ...domesticRate.data(), id: domesticRate.id };
+    }
+
+    var commercialRate: CommercialRate | FirebaseFirestore.DocumentData = (
       await commercialRateCollection.where("latest", "==", true).get()
     ).docs[0];
 
-    const industrialRate = (
+    if (!commercialRate) {
+      commercialRate = {
+        id: "Commercial No Rate",
+        fixedChargeRate: [
+          { pricePerUnit: 0, range: "0-20" },
+          { pricePerUnit: 0, range: "20-90" },
+        ],
+        slabs: [
+          {
+            pricePerUnit: 0,
+            range: "0-100",
+          },
+          {
+            pricePerUnit: 0,
+            range: "101-200",
+          },
+          {
+            pricePerUnit: 0,
+            range: "201-300",
+          },
+          {
+            pricePerUnit: 0,
+            range: "301-400",
+          },
+          {
+            pricePerUnit: 0,
+            range: ">400",
+          },
+        ],
+        validFrom: null,
+        validTill: null,
+        type: "Commercial",
+      } as CommercialRate & { id: string };
+    } else {
+      commercialRate = { ...commercialRate.data(), id: commercialRate.id };
+    }
+
+    var industrialRate: IndustrialRate | FirebaseFirestore.DocumentData = (
       await industrialRateCollection.where("latest", "==", true).get()
     ).docs[0];
+
+    if (!industrialRate) {
+      industrialRate = {
+        fixedChargeRate: 0,
+        id: "Industrial No Rate",
+        slabs: [
+          {
+            pricePerUnit: 0,
+            range: "0-500",
+          },
+          {
+            pricePerUnit: 0,
+            range: ">500",
+          },
+        ],
+        validFrom: null,
+        validTill: null,
+        type: "Industrial",
+      } as IndustrialRate & { id: string };
+    } else {
+      industrialRate = { ...industrialRate.data(), id: industrialRate.id };
+    }
 
     res.status(200).json({
       success: true,
       message: "Found current rates",
       rates: {
-        domesticRate: { ...domesticRate.data(), id: domesticRate.id },
-        commercialRate: { ...commercialRate.data(), id: commercialRate.id },
-        industrialRate: { ...industrialRate.data(), id: industrialRate.id },
+        domesticRate,
+        commercialRate,
+        industrialRate,
       },
     });
   } catch (err) {
