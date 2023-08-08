@@ -465,6 +465,7 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
       breakage: Array<Breakage>;
       fixedCharge: { amount: number; calculation: string };
       subsidyDiscount: number;
+      totalEC: number;
     } = null;
     var rateDoc = null;
 
@@ -526,10 +527,11 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
         consumption: currentBillData.consumption,
         breakage: calculatedTotalCharge.breakage,
         totalCharge: calculatedTotalCharge.totalCharge,
+        totalEC: calculatedTotalCharge.totalEC,
       } as Billing);
 
     const bill = (
-      await billingCollection.doc(req.body.billId).get()
+      await billingCollection.doc(compliant.billDocId).get()
     ).data() as Billing;
 
     createPDFAndMail(
