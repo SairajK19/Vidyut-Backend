@@ -330,6 +330,7 @@ billingRouter.post("/createBill", async (req, res) => {
       failedBills,
       success: true,
       createdBills: bills.length,
+      message: `Created ${req.body.billReadings.length} out of ${bills.length} bill(s)`,
     });
   } catch (err) {
     console.log(err);
@@ -581,6 +582,119 @@ billingRouter.get("/currentRates", async (req, res) => {
     console.log(err);
     return res.status(500).json({
       message: "Error while getting current rates",
+      error: err.message,
+      success: false,
+    });
+  }
+});
+
+billingRouter.get("/bills", async (_req, res) => {
+  try {
+    const billsRef = await billingCollection.get();
+    const bills: Array<{
+      consumerDocId: string;
+      consumerType: string;
+      fullName: string;
+      consumption: number;
+      currentDate: string;
+      totalCharge: number;
+      billId: string;
+      dueDate: string;
+      paid: boolean;
+    }> = [];
+
+    await Promise.all(
+      billsRef.docs.map(async (bill) => {
+        const consumer = await consumerCollection
+          .doc(bill.data().consumerDocId)
+          .get();
+
+        bills.push({
+          billId: bill.id,
+          consumerDocId: bill.data().consumerDocId,
+          consumerType: consumer.data().consumerType,
+          consumption: bill.data().consumption,
+          currentDate: bill.data().currentDate,
+          fullName: consumer.data().fullName,
+          totalCharge: bill.data().totalCharge,
+          dueDate: bill.data().dueDate,
+          paid: bill.data().paid,
+        });
+      })
+    );
+
+    return res
+      .status(200)
+      .json({ message: "Bill found", success: true, bills: bills });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Internal error, failed to bills",
+      error: err.message,
+      success: false,
+    });
+  }
+});
+
+billingRouter.get("/bill/:billId", async (req, res) => {
+  try {
+    const billId = req.params.billId;
+    const bill = await billingCollection.doc(billId).get();
+    var rateDoc:
+      | (DomesticRate & { rateDocId: string })
+      | (CommercialRate & { rateDocId: string })
+      | (IndustrialRate & { rateDocId: string }) = null;
+    if (!bill.data()) {
+      throw new Error(`Bill ${billId} not found!`);
+    }
+
+    switch (bill.data().consumerType as ConsumerType) {
+      case "Domestic":
+        rateDoc = {
+          ...((
+            await domesticRateCollection.doc(bill.data().rateDocId).get()
+          ).data() as DomesticRate),
+          rateDocId: bill.data().rateDocId,
+        };
+        break;
+      case "Commercial":
+        rateDoc = {
+          ...((
+            await commercialRateCollection.doc(bill.data().rateDocId).get()
+          ).data() as CommercialRate),
+          rateDocId: bill.data().rateDocId,
+        };
+        break;
+      case "Industrial":
+        rateDoc = {
+          ...((
+            await industrialRateCollection.doc(bill.data().rateDocId).get()
+          ).data() as IndustrialRate),
+          rateDocId: bill.data().rateDocId,
+        };
+        break;
+    }
+    const consumer = await consumerCollection
+      .doc(bill.data().consumerDocId)
+      .get();
+
+    if (!consumer.data()) {
+      throw new Error("Consumer not found!");
+    }
+
+    res.status(200).json({
+      success: true,
+      billData: {
+        ...bill.data(),
+        ...consumer.data(),
+        rateDoc,
+        billDocId: bill.id,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: `Internal error, failed to bill with bill id ${req.params.billId}`,
       error: err.message,
       success: false,
     });

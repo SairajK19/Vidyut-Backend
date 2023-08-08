@@ -229,18 +229,29 @@ consumerRouter.post("/verify-otp", async (req, res) => {
   }
 });
 
-consumerRouter.get("/bill", async (req, res) => {
+consumerRouter.get("/render-bill/:billId", async (req, res) => {
   try {
-    const bills = await billingCollection.get();
+    const bill = await billingCollection.doc(req.params.billId).get();
+    if (!bill.data()) {
+      return res.status(404).redirect("http://localhost:3000/404");
+    }
 
-    return res
-      .status(200)
-      .json({ message: "Bill found", success: true, bills: bills });
+    const consumer = await consumerCollection
+      .doc(bill.data().consumerDocId)
+      .get();
+    if (!consumer.data()) {
+      return res.status(404).send("404 Bill not found");
+    }
+
+    res.render("../lib/views/pages/bill.ejs", {
+      bill: bill.data(),
+      consumerData: consumer.data(),
+    });
   } catch (err) {
     console.log(err);
     return res.status(500).json({
-      message: "Internal error, failed to bills",
-      error: err,
+      message: `Internal error, failed to render bill with bill id ${req.params.billId}`,
+      error: err.message,
       success: false,
     });
   }
