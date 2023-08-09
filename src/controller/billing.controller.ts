@@ -331,7 +331,7 @@ billingRouter.post("/createBill", async (req, res) => {
       failedBills,
       success: true,
       createdBills: bills.length,
-      message: `Created ${req.body.billReadings.length} out of ${bills.length} bill(s)`,
+      message: `Created ${bills.length} out of ${req.body.billReadings.length} bill(s)`,
     });
   } catch (err) {
     console.log(err);

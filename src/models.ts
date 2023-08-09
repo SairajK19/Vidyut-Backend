@@ -89,6 +89,6 @@ export type Complaint = {
 };
 
 export type OTP = {
-  consumerId: string;
+  email: string;
   otp: number;
 };

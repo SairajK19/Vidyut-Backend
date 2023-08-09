@@ -74,6 +74,99 @@ consumerRouter.post("/createConsumer", async (req, res) => {
 
 /**
  * {
+ *  email: string,
+ *  fullName: string
+ * }
+ */
+consumerRouter.post("/registration-otp", async (req, res) => {
+  try {
+    const otp = Math.floor(1000 + Math.random() * 9000);
+
+    const oldOtps = await otpCollection
+      .where("email", "==", req.body.email)
+      .get();
+
+    await Promise.all(
+      oldOtps.docs.map((oldOtp) => {
+        otpCollection.doc(oldOtp.id).delete();
+      })
+    );
+
+    ejs.renderFile(
+      path.join(__dirname, "../lib/views/pages/otp.ejs"),
+      { consumerData: { fullName: req.body.fullName, otp: otp } },
+      async (err: any, mail: any) => {
+        var mainOptions = {
+          from: '"EBS" noreply.ebsos@gmail.com',
+          to: req.body.email,
+          subject: "Vidyut: Registration OTP",
+          html: mail,
+        };
+
+        if (err) {
+          throw new Error("Error while sending mail");
+        }
+
+        transporter.sendMail(
+          mainOptions,
+          function (err: any, info: { response: string }) {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log(
+                `Message sent to ${req.body.email}: ` + info.response
+              );
+            }
+          }
+        );
+      }
+    );
+
+    await otpCollection.add({ email: req.body.email, otp } as OTP);
+    // res.render("otp.ejs", { consumerData: { ...consumer.data(), otp: otp } });
+    return res
+      .status(200)
+      .json({ success: true, message: `OTP sent to ${req.body.email}` });
+  } catch (err) {
+    console.log(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error while sending otp" });
+  }
+});
+
+/**
+ * {
+ *  otp: number,
+ *  email: string
+ * }
+ */
+consumerRouter.post("/verify-registration-otp", async (req, res) => {
+  try {
+    const otp = (await otpCollection.where("email", "==", req.body.email).get())
+      .docs[0];
+
+    if (otp.data().otp == Number(req.body.otp)) {
+      await otpCollection.doc(otp.id).delete();
+      return res
+        .status(200)
+        .json({ message: "OTP Verfied successfully", success: true });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: "OTP Verification failed, invalid OTP",
+    });
+  } catch (err) {
+    console.log(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Error while verifying otp" });
+  }
+});
+
+/**
+ * {
  *  consumerDocId: string,
  *  billDocId: string,
  *  description: string,
@@ -174,7 +267,7 @@ consumerRouter.get("/otp/:consumerId", async (req, res) => {
     const otp = Math.floor(1000 + Math.random() * 9000);
     const consumer = await consumerCollection.doc(consumerId).get();
     const oldOtps = await otpCollection
-      .where("consumerId", "==", consumer.id)
+      .where("email", "==", consumer.data().email as User)
       .get();
 
     await Promise.all(
@@ -218,7 +311,7 @@ consumerRouter.get("/otp/:consumerId", async (req, res) => {
       }
     );
 
-    await otpCollection.add({ consumerId: consumer.id, otp } as OTP);
+    await otpCollection.add({ email: consumer.data().email, otp } as OTP);
     // res.render("otp.ejs", { consumerData: { ...consumer.data(), otp: otp } });
     return res
       .status(200)
@@ -242,8 +335,14 @@ consumerRouter.get("/otp/:consumerId", async (req, res) => {
 consumerRouter.post("/verify-otp", async (req, res) => {
   try {
     const consumerId = req.body.consumerId;
+    const consumer = await consumerCollection.doc(consumerId).get();
+    if (!consumer.data()) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Consumer not found" });
+    }
     const otp = (
-      await otpCollection.where("consumerId", "==", consumerId).get()
+      await otpCollection.where("email", "==", consumer.data().email).get()
     ).docs[0];
 
     if (otp.data().otp == Number(req.body.otp)) {
