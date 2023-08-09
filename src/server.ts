@@ -11,6 +11,8 @@ import { consumerRouter } from "./controller/consumer.controller";
 import { authRouter } from "./controller/auth.controller";
 import { billingRouter } from "./controller/billing.controller";
 import path from "path";
+import { CronJob } from "cron";
+import { sendMailIfBillOverDue } from "./services/billing.service";
 
 const port = 8080;
 const app = express();
@@ -52,5 +54,11 @@ server.listen(port, async () => {
     res.send("I am alive, connected successfully");
   });
 
+  // * * * * * *
+  // Seconds, Minutes, Hours, Day of month, Months, Day of weeks
+  var job = new CronJob('* */60 * * * *', function() {
+    console.log("Sending Message");
+    sendMailIfBillOverDue();
+  }, null, true, "Asia/Kolkata")
   console.log(`Started server on port ${port}`);
 });

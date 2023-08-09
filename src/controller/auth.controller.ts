@@ -7,9 +7,15 @@ authRouter.post("/login", async (req, res) => {
   try {
     const adminDoc = (
       await adminCollection.where("userName", "==", req.body.userName).get()
-    ).docs[0].data();
+    ).docs[0];
 
-    if (adminDoc.password === req.body.password) {
+    if (!adminDoc) {
+      return res
+        .status(404)
+        .json({ message: "Admin not found", success: false });
+    }
+
+    if (adminDoc.data().password === req.body.password) {
       req.session.userData = {
         loggedIn: true,
         userDocId: null,

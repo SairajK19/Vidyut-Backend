@@ -1,0 +1,62 @@
+<html>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap");
+
+    * {
+      padding: 0px;
+      margin: 0px;
+      box-sizing: border-box;
+    }
+
+    body {
+      max-width: 600px;
+      min-height: 110%;
+      margin: 10px;
+      font-family: "Poppins", sans-serif;
+      font-size: medium;
+      color: #5c5c5c;
+      font-weight: 400;
+    }
+
+    .orange {
+      color: #dd6b20;
+    }
+
+    .heading {
+      font-size: large;
+      font-weight: bold;
+    }
+
+    .header {
+      padding: 10px;
+      text-align: center;
+    }
+
+    .greeting {
+      padding: 20px;
+    }
+  </style>
+  <body>
+    <!-- Greeting -->
+    <div class="greeting">
+      <p>
+        Hello, <span class="orange heading"><%= consumerData.fullName %></span>
+      </p>
+      <p>
+        Your electricity bill for
+        <span class="orange"><%= bill.currentDate %></span> is overdue. Please
+        find the bill attached below and request you to pay the bill.
+      </p>
+      <p>Bill Id: <%= billId %></p>
+    </div>
+
+    <!-- Thankyou -->
+    <div class="greeting">
+      <p>Thank you</p>
+      <p>Regards</p>
+      <p>
+        <span class="orange">Vidyut</span>
+      </p>
+    </div>
+  </body>
+</html>

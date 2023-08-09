@@ -30,9 +30,17 @@ export const createPDFAndMail = (
   bill: Billing & { subsidyDiscount: number },
   consumer: User,
   billId: string,
-  updateBill: boolean
+  updateBill: boolean,
+  overDue: boolean
 ) => {
   // console.log(path.join(__dirname, "views/pages/bill.ejs"));
+  console.log(
+    overDue,
+    "OVERDUE",
+    `views/pages/${
+      overDue ? "overdue.ejs" : updateBill ? "bill_update_mail.ejs" : "mail.ejs"
+    }`
+  );
   ejs.renderFile(
     path.join(__dirname, "views/pages/bill.ejs"),
     { bill: bill, consumerData: consumer, billId: billId },
@@ -40,7 +48,13 @@ export const createPDFAndMail = (
       ejs.renderFile(
         path.join(
           __dirname,
-          `views/pages/${!updateBill ? "mail.ejs" : "bill_update_mail.ejs"}`
+          `views/pages/${
+            overDue
+              ? "overdue.ejs"
+              : updateBill
+              ? "bill_update_mail.ejs"
+              : "mail.ejs"
+          }`
         ),
         { bill: bill, consumerData: consumer, billId },
         async (err, mail) => {

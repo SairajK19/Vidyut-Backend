@@ -320,6 +320,7 @@ billingRouter.post("/createBill", async (req, res) => {
             },
             consumer,
             createdBill.id,
+            false,
             false
           );
         }
@@ -415,7 +416,8 @@ billingRouter.post("/billCorrectionMeterReading", async (req, res) => {
       },
       consumer.data() as User,
       req.body.billId,
-      true
+      true,
+      false
     );
 
     updatedBill
@@ -541,7 +543,8 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
       },
       consumer.data() as User,
       compliant.billDocId,
-      true
+      true,
+      false
     );
 
     updatedBill

@@ -8,6 +8,7 @@ import {
 import {
   billingCollection,
   commercialRateCollection,
+  consumerCollection,
   domesticRateCollection,
   industrialRateCollection,
 } from "./initDb";
@@ -18,7 +19,7 @@ import {
   IndustrialRate,
   User,
 } from "../models";
-import { DomesticRangeRates } from "../lib/utils";
+import { DomesticRangeRates, createPDFAndMail } from "../lib/utils";
 import moment from "moment";
 
 export const addDomesticRate = async (rateBody: {
@@ -527,3 +528,35 @@ export async function updateBillingStatus(billId: string) {
   } as Billing);
   return updatePaymentStatus;
 }
+
+export const sendMailIfBillOverDue = async () => {
+  const bills = await billingCollection.get();
+
+  await Promise.all(
+    bills.docs.map(async (bill) => {
+      const billDueDate = bill.data().dueDate;
+      console.log(billDueDate);
+      if (moment().isAfter(moment(new Date(billDueDate)).toISOString())) {
+        const consumer = await consumerCollection
+          .doc(bill.data().consumerDocId)
+          .get();
+
+        const subsidyDiscount =
+          (consumer.data().subsidyRate / 100) *
+          (bill.data().totalEC +
+            bill.data().fixedCharge.amount +
+            bill.data().meterRent);
+
+        createPDFAndMail(
+          { ...(bill.data() as Billing), subsidyDiscount },
+          consumer.data() as User,
+          bill.id,
+          false,
+          true
+        );
+
+        console.log("Sent overdue bill")
+      }
+    })
+  );
+};
