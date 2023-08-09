@@ -214,7 +214,9 @@
         <hr class="divider" />
         <div class="bill_summary--table-row">
           <p class="start" id="charges">Total Charges</p>
-          <p class="orange">₹<%= bill.totalEC + bill.fixedCharge.amount + bill.meterRent %></p>
+          <p class="orange">
+            ₹<%= bill.totalEC + bill.fixedCharge.amount + bill.meterRent %>
+          </p>
         </div>
         <div class="bill_summary--table-row">
           <p class="start">Subsidy</p>
@@ -237,12 +239,16 @@
     </div>
 
     <!-- Thankyou -->
-    <div class="greeting">
-      <p>Thank you</p>
-      <p>Regards</p>
-      <p>
-        <span class="orange">Vidyut</span>
-      </p>
+    <div class="bill_id_wrapper" style="display: flex; align-items: flex-end; justify-content: space-between;">
+      <div class="greeting">
+        <p>Thank you</p>
+        <p>Regards</p>
+        <p>
+          <span class="orange">Vidyut</span>
+        </p>
+      </div>
+
+      <p class="greeting"><span class="orange">Bill Id: </span> <%= billId %></p>
     </div>
   </body>
 </html>

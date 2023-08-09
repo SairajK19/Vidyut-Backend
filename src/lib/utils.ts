@@ -35,7 +35,7 @@ export const createPDFAndMail = (
   // console.log(path.join(__dirname, "views/pages/bill.ejs"));
   ejs.renderFile(
     path.join(__dirname, "views/pages/bill.ejs"),
-    { bill: bill, consumerData: consumer },
+    { bill: bill, consumerData: consumer, billId: billId },
     async (err, billData) => {
       ejs.renderFile(
         path.join(
