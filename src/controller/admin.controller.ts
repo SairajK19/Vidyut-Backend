@@ -136,12 +136,22 @@ adminRouter.post("/rejectConsumer", async (req, res) => {
 adminRouter.get("/fetchConsumers", async (_req, res) => {
   try {
     const fetchedConsumers: Array<ConsumerFetchDetails> = await fetchConsumer();
+    const totalComplaints = (await complaintCollection.get()).docs.length;
+    const totalApplications = (await consumerCollection.get()).docs.length;
+    const totalPendingApplications = (
+      await consumerCollection.where("status", "==", "Pending").get()
+    ).docs.length;
 
     fetchedConsumers
       ? res.status(200).json({
           success: true,
           message: "fetched consumer successfully",
           fetchedConsumers: fetchedConsumers,
+          stats: {
+            totalApplications,
+            totalComplaints,
+            totalPendingApplications,
+          },
         })
       : res
           .status(500)
@@ -338,6 +348,29 @@ adminRouter.put("/updateComplaintStatus", async (req, res) => {
           message:
             "Error while changing consumer complaint status , please try again",
         });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Error while changing status",
+      error: err.message,
+      success: false,
+    });
+  }
+});
+
+adminRouter.get("/stats", async (req, res) => {
+  try {
+    const totalComplaints = (await complaintCollection.get()).docs.length;
+    const totalApplications = (await consumerCollection.get()).docs.length;
+    const totalPendingApplications = (
+      await consumerCollection.where("status", "==", "Pending").get()
+    ).docs.length;
+
+    return res.status(200).json({
+      message: "Generated statistics",
+      stats: { totalApplications, totalComplaints, totalPendingApplications },
+      success: true,
+    });
   } catch (err) {
     console.log(err);
     return res.status(500).json({
