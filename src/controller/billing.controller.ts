@@ -25,6 +25,7 @@ import {
   consumerCollection,
   domesticRateCollection,
   industrialRateCollection,
+  logger,
 } from "../services/initDb";
 import { billingCollection } from "../services/initDb";
 import { User } from "../models";
@@ -171,6 +172,7 @@ billingRouter.post("/createBill", async (req, res) => {
               reason: "Consumer not found",
             });
 
+            logger.info(`Bill creation failed since consumer not found`);
             return;
           } else if (consumer.meterNumber != reading.meterNumber) {
             console.log(`Invalid meter number ${reading.meterNumber}!`);
@@ -179,6 +181,9 @@ billingRouter.post("/createBill", async (req, res) => {
               reason: "Meter number not corresponding to the consumer",
             });
 
+            logger.info(
+              `Bill creation failed for ${consumer.email} meter number not corresponding to the consumer`
+            );
             return;
           } else if (!consumer.approved) {
             console.log(`Consumer ${consumer.fullName} not yet approved`);
@@ -187,6 +192,9 @@ billingRouter.post("/createBill", async (req, res) => {
               reason: "Consumer not yet approved",
             });
 
+            logger.info(
+              `Bill creation failed for ${consumer.email} due consumer not approved`
+            );
             return;
           }
 
@@ -218,6 +226,9 @@ billingRouter.post("/createBill", async (req, res) => {
                 reason: `Previous reading is greater than current reading. Previous reading = ${previousBill.currentReading}, Current reading = ${reading.currentReading}`,
               });
 
+              logger.info(
+                `Bill creation failed for ${consumer.email} due to Previous reading is less than current reading`
+              );
               return;
             }
           }
@@ -323,6 +334,8 @@ billingRouter.post("/createBill", async (req, res) => {
             false,
             false
           );
+
+          logger.info(`Bill generated for ${consumer.email}`);
         }
       )
     );
@@ -420,6 +433,7 @@ billingRouter.post("/billCorrectionMeterReading", async (req, res) => {
       false
     );
 
+    logger.info(`Bill updated for ${consumer.data().email}`);
     updatedBill
       ? res.status(200).json({
           success: true,
@@ -547,6 +561,7 @@ billingRouter.post("/billCorrectionSlabRate", async (req, res) => {
       false
     );
 
+    logger.info(`Bill updated for ${consumer.data().email}`);
     updatedBill
       ? res.status(200).json({
           success: true,

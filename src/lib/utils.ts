@@ -4,6 +4,7 @@ import path from "path";
 import { User } from "../models";
 import { Billing } from "../models";
 import { transporter } from "./commons";
+import { logger } from "../services/initDb";
 
 export const enum DomesticRangeRates {
   ZeroToHundred = "0-100",
@@ -83,6 +84,15 @@ export const createPDFAndMail = (
               console.log(err);
             } else {
               console.log("Message sent: " + info.response);
+              logger.info(
+                `Mail sent to ${consumer.email} due to ${
+                  overDue
+                    ? "bill overdue"
+                    : updateBill
+                    ? "bill update after complaint"
+                    : "new bill"
+                }`
+              );
             }
           });
         }

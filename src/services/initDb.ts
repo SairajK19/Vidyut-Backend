@@ -11,6 +11,7 @@ import {
 } from "../lib/commons";
 import { User } from "../models";
 const credentials = require("../../credentials.json");
+export const logger = require("logger").createLogger("development.log");
 
 admin.initializeApp({
   credential: admin.credential.cert(credentials),
