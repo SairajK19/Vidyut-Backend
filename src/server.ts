@@ -56,9 +56,16 @@ server.listen(port, async () => {
 
   // * * * * * *
   // Seconds, Minutes, Hours, Day of month, Months, Day of weeks
-  var job = new CronJob('* */60 * * * *', function() {
-    console.log("Sending Message");
-    sendMailIfBillOverDue();
-  }, null, true, "Asia/Kolkata")
+  // '*/20 * * * * * Every 20 seconds
+  var job = new CronJob(
+    "00 00 00 * * *",
+    function () {
+      sendMailIfBillOverDue();
+    },
+    null,
+    true,
+    "Asia/Kolkata"
+  );
+
   console.log(`Started server on port ${port}`);
 });

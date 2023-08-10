@@ -34,7 +34,6 @@ export const createPDFAndMail = (
   updateBill: boolean,
   overDue: boolean
 ) => {
-  // console.log(path.join(__dirname, "views/pages/bill.ejs"));
   console.log(
     overDue,
     "OVERDUE",
@@ -65,7 +64,11 @@ export const createPDFAndMail = (
           var mainOptions = {
             from: '"EBS" noreply.ebsos@gmail.com',
             to: consumer.email,
-            subject: "Vidyut: Electricity Bill",
+            subject: overDue
+              ? "Vidyut Electricity Bill Overdue"
+              : updateBill
+              ? "Vidyut Electricity Updated Bill"
+              : "Vidyut Electricity Bill",
             html: mail,
             attachments: [
               {

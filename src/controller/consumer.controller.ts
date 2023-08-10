@@ -387,7 +387,7 @@ consumerRouter.get("/render-bill/:billId", async (req, res) => {
         bill.data().meterRent);
 
     res.render("../lib/views/pages/bill.ejs", {
-      bill: { ...bill.data(), subsidyDiscount },
+      bill: { ...bill.data(), subsidyDiscount: Math.round(subsidyDiscount) },
       consumerData: consumer.data(),
       billId: bill.id,
     });

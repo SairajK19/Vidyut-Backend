@@ -418,7 +418,7 @@ export const calculateDomesticOrCommercialTotalCharge = async (
       },
 
       meterRent: meterRent,
-      subsidyDiscount: subsidyDiscount,
+      subsidyDiscount: Math.round(subsidyDiscount),
       totalEC: totalEnergyCharges,
     };
   } else if (
@@ -445,7 +445,7 @@ export const calculateDomesticOrCommercialTotalCharge = async (
       },
 
       meterRent: meterRent,
-      subsidyDiscount: subsidyDiscount,
+      subsidyDiscount: Math.round(subsidyDiscount),
       totalEC: totalEnergyCharges,
     };
   }
@@ -555,7 +555,7 @@ export const sendMailIfBillOverDue = async () => {
           true
         );
 
-        console.log("Sent overdue bill")
+        console.log("Sent overdue bill");
       }
     })
   );
